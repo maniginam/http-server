@@ -52,6 +52,10 @@ class EchoHandler implements Handler {
     @Override
     public String init() {
         initWasCalled = true;
+//        String[] lines = new String[0];
+//        for(String line : lines) {
+//            initMessage = initMessage + line;
+//        }
         return initMessage;
     }
 

@@ -1,11 +1,9 @@
 public class MockCommandLine implements CommandLine {
 
-    private final String rex;
-    private final String leo;
+    private final String rex = "rex";
+    private final String leo = "leo";
 
-    public MockCommandLine(String rex, String leo) {
-        this.rex = rex;
-        this.leo = leo;
+    public MockCommandLine() {
     }
 
     @Override
@@ -13,4 +11,15 @@ public class MockCommandLine implements CommandLine {
         String msg = "<3 " + rex + " & " + leo + " <3";
         return msg;
     }
+
+    @Override
+    public void submitEntry(String msg) {
+
+    }
+
+    @Override
+    public void getUsage() {
+        ;
+    }
+
 }

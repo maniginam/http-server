@@ -107,11 +107,11 @@ public class SocketHostTest {
     @Test
     public void initMessageSent() throws Exception {
         host.start();
-        handler.initMessage = "hello world!";
+        handler.initMessage = "hello World!\n";
         helper.connect();
         reader = helper.getReader();
 
-        assertEquals("hello world!", reader.readLine());
+        assertEquals("hello World!", reader.readLine());
     }
 
     @Test
@@ -123,7 +123,7 @@ public class SocketHostTest {
         assertFalse(host.getConnectionThread().isAlive());
 
         List<Delegator> delegators = host.getDelegators();
-        for(Delegator delegator : delegators) {
+        for (Delegator delegator : delegators) {
             assertFalse(delegator.getThread().isAlive());
         }
     }
