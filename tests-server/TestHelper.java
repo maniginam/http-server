@@ -59,4 +59,14 @@ class EchoHandler implements Handler {
         return initMessage;
     }
 
+    @Override
+    public void start(String[] args) throws IOException, InterruptedException {
+
+    }
+
+    @Override
+    public void requireExit(String line) {
+
+    }
+
 }
