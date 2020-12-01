@@ -6,12 +6,13 @@ import java.net.Socket;
 
 public class TestHelper {
     public EchoHandler handler;
+    public EchoHandlerFactory handlerFactory;
     private Socket socket;
     private OutputStream output;
     private BufferedReader reader;
 
     public TestHelper() {
-        handler = new EchoHandler();
+
 
     }
 
@@ -38,18 +39,35 @@ public class TestHelper {
     }
 }
 
+class EchoHandlerFactory implements HandlerFactory {
+
+    private final EchoHandler handler;
+
+    public EchoHandlerFactory() {
+        handler = new EchoHandler();
+    }
+
+    @Override
+    public EchoHandler getHandler() {
+        return handler;
+    }
+}
+
 class EchoHandler implements Handler {
 
     public boolean initWasCalled;
 
     public String initMessage;
+    public HttpResponder responder;
+    public byte[] response;
 
     @Override
-    public String handle(String message) {
-        return message;
+    public byte[] handle(String message) throws IOException {
+        responder = new HttpResponder();
+        response = responder.respond("", message.getBytes());
+        return response;
     }
 
-    @Override
     public String init() {
         initWasCalled = true;
 //        String[] lines = new String[0];
@@ -57,6 +75,11 @@ class EchoHandler implements Handler {
 //            initMessage = initMessage + line;
 //        }
         return initMessage;
+    }
+
+    @Override
+    public String getRoot() {
+        return null;
     }
 
 }

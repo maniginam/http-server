@@ -8,15 +8,17 @@ import java.util.List;
 public class SocketHost {
     private final Handler handler;
     private final int port;
+    private final HandlerFactory factory;
     private ServerSocket server;
     private boolean running;
     private Thread connectionThread;
     private List<Delegator> delegators;
 
 
-    public SocketHost(int port, Handler handler) {
+    public SocketHost(int port, HandlerFactory factory) {
         this.port = port;
-        this.handler = handler;
+        this.factory = factory;
+        handler = factory.getHandler();
         running = false;
         delegators = new LinkedList<Delegator>();
     }
@@ -31,7 +33,6 @@ public class SocketHost {
 
     public void start() throws IOException {
         server = new ServerSocket(port);
-        running = true;
         Runnable accepter = new Runnable() {
             @Override
             public void run() {
@@ -42,6 +43,7 @@ public class SocketHost {
                 }
             }
         };
+        running = true;
         connectionThread = new Thread(accepter);
         connectionThread.start();
     }
@@ -61,8 +63,8 @@ public class SocketHost {
 
     public void stop() throws Exception {
         if (running) {
-            running = false;
             server.close();
+            running = false;
             for (Delegator delegator : delegators) {
                 delegator.stop();
             }
@@ -81,4 +83,5 @@ public class SocketHost {
     public Thread getConnectionThread() {
         return connectionThread;
     }
+
 }

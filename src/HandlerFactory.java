@@ -1,2 +1,3 @@
-package PACKAGE_NAME;public interface HandlerFactory {
+public interface HandlerFactory {
+    Handler getHandler();
 }

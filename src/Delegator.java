@@ -15,6 +15,8 @@ public class Delegator implements Runnable {
 
     @Override
     public void run() {
+        byte[] response;
+        String contentLengthString;
         try {
             InputStream input = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
@@ -23,8 +25,11 @@ public class Delegator implements Runnable {
                 if (input.available() > 0) {
                     //FIX THIS AS THIS WAS MENTIONED COULD POSE ISSUES
                     String line = reader.readLine();
-                    String response = host.getHandler().handle(line);
-
+                    try {
+                        response = host.getHandler().handle(line);
+                    } catch (ExceptionInfo e) {
+                        response = e.getReponse();
+                    }
                     send(response);
                     output.flush();
 
@@ -39,9 +44,11 @@ public class Delegator implements Runnable {
     }
 
     public void start() throws IOException {
-        String msg = host.getHandler().init();
-        if (msg != null)
-            send(msg);
+
+//        String msg = host.getHandler().init();
+//        if (msg != null)
+//            send(msg);
+
         thread = new Thread(this);
         thread.start();
     }
@@ -51,8 +58,8 @@ public class Delegator implements Runnable {
             thread.join();
     }
 
-    private void send(String response) throws IOException {
-        output.write((response + "\n").getBytes());
+    private void send(byte[] response) throws IOException {
+        output.write(response);
     }
 
     public Thread getThread() {

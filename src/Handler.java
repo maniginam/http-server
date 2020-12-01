@@ -1,4 +1,7 @@
+import java.io.IOException;
+
 public interface Handler {
-    String handle(String message);
-    String init();
+    byte[] handle(String message) throws ExceptionInfo, IOException;
+
+    String getRoot();
 }
