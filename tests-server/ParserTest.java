@@ -14,7 +14,7 @@ public class ParserTest {
 
     @Test
     public void status() {
-        parser.setStatus("", 200, "OK");
+        parser.setStatus(200, "OK");
         String result = parser.getStatus();
 
         assertEquals("HTTP/1.1 200 OK\r\n", result);
@@ -33,7 +33,7 @@ public class ParserTest {
         String msg = "HTTP/1.1 200 OK\r\n" +
                 "Server: Gina's Http Server\r\nContent-Length: 5\r\n\r\n";
 
-        parser.setStatus("", 200, "OK");
+        parser.setStatus(200, "OK");
         parser.setHeaderField("hello", null, "");
         String result = parser.getHeader();
 
@@ -43,7 +43,7 @@ public class ParserTest {
     @Test
     public void standardHeader() {
         String msg = "";
-        parser.setStatus("", 200, "OK");
+        parser.setStatus(200, "OK");
         String result = parser.getStatus();
 
                 assertEquals("HTTP/1.1 200 OK\r\n", result);

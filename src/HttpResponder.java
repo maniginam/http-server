@@ -13,6 +13,7 @@ public class HttpResponder {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         output.write(headerBytes);
         output.write(body);
+        output.write("\r\n".getBytes());
 
         byte response[] = output.toByteArray();
         return response;

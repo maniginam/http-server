@@ -18,7 +18,7 @@ public class HttpHandlerTest {
     @BeforeEach
     public void setup() throws IOException, InterruptedException {
         handler = new HttpHandler(3141, "/Users/maniginam/server-task/http-spec/testroot");
-        server = new HttpServer(3141, "/Users/maniginam/server-task/http-spec/testroot");
+        server = new HttpServer("/Users/maniginam/server-task/http-spec/testroot");
         parser = new HttpParser();
     }
 
@@ -29,32 +29,18 @@ public class HttpHandlerTest {
     }
 
     @Test
-    public void createsServerOnInit() throws IOException, InterruptedException {
-//        String message = "HTTP/1.1 200 OK\r\n\" + server.getConfigMessage()" + "\r\n\r\n";
-//        String result = handler.init();
+    public void submitsBlankEntry() throws Exception {
+        byte[] result = handler.handle("GET HTTP/1.1");
 
-        assertNotNull(handler.getServer());
+        assertArrayEquals(handler.getServer().getResponse(), result);
     }
 
-//    @Test
-//    public void submitsBlankEntry() throws Exception {
-//        Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
-//        String fileContent = Files.readString(path, StandardCharsets.UTF_8);
-//
-//        byte[] result = handler.handle("GET HTTP/1.1");
-//
-//        assertEquals(parser.wrapHeader(fileContent, "").getBytes(), result);
-//    }
-//
-//    @Test
-//    public void submitsForwardSlashEntry() throws Exception {
-//        Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
-//        String fileContent = Files.readString(path, StandardCharsets.UTF_8);
-//
-//        byte[] result = handler.handle("GET / HTTP/1.1");
-//
-////        assertEquals(HttpParser.wrapHeader(fileContent, ""), result);
-//    }
+    @Test
+    public void submitsForwardSlashEntry() throws Exception {
+        byte[] result = handler.handle("GET / HTTP/1.1");
+
+        assertArrayEquals(handler.getServer().getResponse(), result);
+    }
 
 }
 

@@ -1,18 +1,16 @@
 public class HttpParser {
 
     private static String serverName = "Gina's Http Server";
-    String msg = "";
     public String status = "HTTP/1.1 200 OK";
-    public String headerField = "Server: " + serverName + "\r\n" +
-            "Content-Length: " + msg.length() + "\r\n";
+    public String headerField;
+    int contentLength;
 
 
-    public void setStatus(String method, int code, String msg) {
-        status = method + "HTTP/1.1 " + code + " " + msg + "\r\n";
+    public void setStatus(int code, String msg) {
+        status = "HTTP/1.1 " + code + " " + msg + "\r\n";
     }
 
     public void setHeaderField(String msg, byte[] bodyBytes, String fields) {
-        int contentLength = 100;
         if(msg != null)
             contentLength = msg.length();
         if(bodyBytes != null)
@@ -51,11 +49,6 @@ public class HttpParser {
                 headerField +
                 msg;
         return response;
-    }
-
-    public String toHTML(String image) {
-        String body = "<p><input type=\"image\" name=\"autobot.jpg\">" + image + "</input></p>";
-        return body;
     }
 
     public String getHeader() {

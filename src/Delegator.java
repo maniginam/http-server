@@ -28,7 +28,7 @@ public class Delegator implements Runnable {
                     try {
                         response = host.getHandler().handle(line);
                     } catch (ExceptionInfo e) {
-                        response = e.getReponse();
+                        response = e.getMessage().getBytes();
                     }
                     send(response);
                     output.flush();
@@ -44,11 +44,6 @@ public class Delegator implements Runnable {
     }
 
     public void start() throws IOException {
-
-//        String msg = host.getHandler().init();
-//        if (msg != null)
-//            send(msg);
-
         thread = new Thread(this);
         thread.start();
     }

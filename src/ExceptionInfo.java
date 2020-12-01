@@ -2,31 +2,30 @@ import java.io.IOException;
 
 public class ExceptionInfo extends Exception {
 
-    public byte[] response;
+    public String message;
     private HttpParser parser;
     private HttpResponder responder;
 
-    public ExceptionInfo (String request, String response) throws IOException {
-        super(response);
-        this.setResponse(response);
+    public ExceptionInfo (String request, String message) throws IOException {
+        super(message);
+        this.setMessage(message);
     }
 
-    public ExceptionInfo (String request, String response, Throwable cause) throws IOException {
-        super(response, cause);
-        this.setResponse(response);
+    public ExceptionInfo (String request, String message, Throwable cause) throws IOException {
+        super(message, cause);
+        this.setMessage(message);
     }
 
-    public byte[] getReponse() {
-        return response;
+    public String getMessage() {
+        return message;
         }
 
-    public void setResponse(String message) throws IOException {
+    public void setMessage(String message) throws IOException {
         responder = new HttpResponder();
         parser = new HttpParser();
-        parser.setStatus("", 404, message);
-        parser.setHeaderField("", null, "");
-        response = responder.respond(parser.getHeader(), message.getBytes());
-//                parser.getStatus() + parser.getHeaderField() + message;
+        parser.setStatus(404, message);
+        parser.setHeaderField(message, null, "");
+        this.message = parser.getStatus() + parser.getHeaderField() + message;
 
     }
 

@@ -1,10 +1,7 @@
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,13 +10,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class FilesTest {
     private HttpServer server;
-    private Exception ExceptionInfo;
     private HttpHandler handler;
     private HttpParser parser;
 
     @BeforeEach
     public void setup() throws IOException {
-        server = new HttpServer(3141, "/Users/maniginam/server-task/http-spec/testroot");
+        server = new HttpServer("/Users/maniginam/server-task/http-spec/testroot");
         handler = new HttpHandler(3141, "/Users/maniginam/server-task/http-spec/testroot");
         parser = new HttpParser();
     }
@@ -53,7 +49,8 @@ public class FilesTest {
     public void serveHtmlFile() throws IOException, ExceptionInfo {
         Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
         String msg = Files.readString(path, StandardCharsets.UTF_8);
-        String get = "GET /listing/index.html HTTP/1.1";
+        int contentLength = msg.length();
+        String get = "GET /index.html HTTP/1.1";
 
         handler.handle(get);
         String fields = handler.getServer().getFields();
@@ -61,6 +58,7 @@ public class FilesTest {
 
 
         assertEquals(msg, result);
+        assertEquals(contentLength, result.length());
         assertTrue(fields.contains("Content-Type"));
         assertTrue(fields.contains("text/html"));
 
@@ -68,8 +66,8 @@ public class FilesTest {
 
     @Test
     public void serveJPG() throws IOException, ExceptionInfo {
-        String jpg = "autobot.jpg";
-        String get = "GET /listing/img/autobot.jpg HTTP/1.1";
+        String jpg = "/img/autobot.jpg";
+        String get = "GET /img/autobot.jpg HTTP/1.1";
 
         byte[] body = server.convertFiletoBytes(jpg);
 
@@ -85,8 +83,8 @@ public class FilesTest {
 
     @Test
     public void servePNG() throws IOException, ExceptionInfo {
-        String png = "decepticon.png";
-        String get = "GET /listing/img/decepticon.png HTTP/1.1";
+        String png = "/img/decepticon.png";
+        String get = "GET /img/decepticon.png HTTP/1.1";
 
         byte[] body = server.convertFiletoBytes(png);
 
@@ -103,7 +101,7 @@ public class FilesTest {
     @Test
     public void servePDF() throws IOException, ExceptionInfo {
         String pdf = "hello.pdf";
-        String get = "GET /listing/img/hello.pdf HTTP/1.1";
+        String get = "GET /hello.pdf HTTP/1.1";
 
         byte[] body = server.convertFiletoBytes(pdf);
 
