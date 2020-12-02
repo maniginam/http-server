@@ -34,43 +34,24 @@ public class HttpServer {
 //        *********************************
 
         String request = msg.split(" ")[1];
-        System.out.println("request = " + request);
-        System.out.println(request.contains("?"));
-        if (request.matches("HTTP/1.1") || request.matches("/")) {
-            getDefaultRoot();
-        } else if (request.matches("/listing")) {
-            getLinks("listing", "");
-        } else if (request.matches("/listing/img")) {
-            getLinks("listing", "img");
-        } else if (request.contains(".")) {
-            analyzeRequest(request);
-        } else if (request.contains("form?")) {
-            String[] entries = request.split("");
-            System.out.println("request = " + request);
 
-            int i = 0;
-            int[] intEntry = new int[10];
-            for(String entry : entries) {
-                try {
-                    intEntry[i] = parseInt(entry);
-                    i++;
-                } catch (NumberFormatException e) {
-                    //no port update
-                }
+        if (!request.contains("favicon")) {
+            if (request.matches("HTTP/1.1") || request.matches("/")) {
+                getDefaultRoot();
+            } else if (request.matches("/listing")) {
+                getLinks("listing", "");
+            } else if (request.matches("/listing/img")) {
+                getLinks("listing", "img");
+            } else if (request.contains(".")) {
+                analyzeRequest(request);
+            } else if (request.contains("form?")) {
+                bodyMessage = new FormHandler().handle(request, root + "/forms.html");
+            } else {
+                throw new ExceptionInfo(msg, "The page you are looking for was not found, but the Sun is 93 million miles away!");
             }
-            bodyMessage = "<html>\r\n" +
-                    "<h2>GET Form</h2>\r\n" +
-                    "<li>foo: " + intEntry[0] + "</li>\r\n" +
-                    "<li>bar: " + intEntry[1] + "</li>\r\n" +
-                    "</html>";
-            bodyBytes = null;
-            parser.setStatus(200, "OK");
-            createHeader(200, "");
-            response = responder.respond(header, bodyMessage.getBytes());
-        } else {
-            throw new ExceptionInfo(msg, "The page you are looking for was not found, but the Sun is 93 million miles away!");
         }
     }
+
 
     private void getDefaultRoot() throws IOException {
         getFileMessage("index.html");
