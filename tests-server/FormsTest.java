@@ -80,35 +80,59 @@ public class FormsTest {
         FileInputStream input = new FileInputStream(file);
         ByteArrayInputStream inputStream = new ByteArrayInputStream(input.readAllBytes());
         byte[] image = inputStream.readAllBytes();
-        ByteArrayOutputStream request = new ByteArrayOutputStream();
+        ByteArrayOutputStream request1 = new ByteArrayOutputStream();
+        ByteArrayOutputStream request2 = new ByteArrayOutputStream();
+        ByteArrayOutputStream request3 = new ByteArrayOutputStream();
 
-        String post = "POST /form HTTP/1.1\r\n" +
+        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
                 "Name: file\r\n" +
-                "Content-Type: image/jpeg\r\n" +
+                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
                 "Content: " + file + "\r\n" +
 //                "Content: /Users/maniginam/server-task/http-spec/testroot/img/autobot.jpg\r\n" +
                 "Content-Length: " + image.length;
 
-        request.write((post + "\r\n\r\n").getBytes());
-        request.write(image);
+        String requestHeader2 = requestHeader1 + "\r\n------Rex&Leo\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
+                "Content-Type: image/jpeg";
 
-        handler.handle(request.toByteArray());
+        request1.write((requestHeader1 + "\r\n\r\n").getBytes());
+        request2.write((requestHeader2 + "\r\n\r\n").getBytes());
+        request3.write((requestHeader2 + "\r\n\r\n").getBytes());
+        request3.write(image);
+
+        handler.handle(request1.toByteArray());
+        handler.handle(request2.toByteArray());
+        handler.handle(request3.toByteArray());
+
         int requestCount = handler.getServer().getNumberOfRequestParts();
-        String requestHeader = handler.getServer().getRequestHeader();
+        String headerResult = handler.getServer().getRequestHeader();
         byte[] requestBody = handler.getServer().getRequestBody();
         String header = handler.getServer().getHeader();
         String response = handler.getServer().getBodyMessage();
 
 
         assertEquals(2, requestCount);
-        assertEquals(post, requestHeader);
+        assertEquals(requestHeader2, headerResult);
 //        assertArrayEquals(image, requestBody);
-        assertTrue(header.contains("Content-Type: image/jpeg"));
+//        assertTrue(header.contains("Content-Type: image/jpeg"));
+        assertTrue(response.contains("<h2>POST Form</h2>"));
         assertTrue(response.contains("<li>file name: BruslyDog.jpeg</li>"));
-        assertTrue(response.contains("<li>file size: 93178</li>"));
+        assertTrue(response.contains("<li>file size: 92990</li>"));
         assertTrue(response.contains("<li>content type: application/octet-stream</li>"));
 
     }
 
+    @Test
+    public void boxMapWDisposition() {
+        PostFormHandler poster = new PostFormHandler();
+        String request = "Rex\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"Leo.jpeg\"\r\n" +
+                "Content-Type: image/jpeg";
+
+        String result = poster.handle(request, 3);
+
+        assertTrue(result.contains("<li>file name: Leo.jpeg</li>"));
+
+    }
 
 }

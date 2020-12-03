@@ -66,11 +66,8 @@ class EchoHandler implements Handler {
 
     @Override
     public byte[] handle(byte[] message) throws IOException {
-        System.out.println("handling");
         String msg = new String(message, StandardCharsets.UTF_8);
-        System.out.println("msg = " + msg);
         response = msg.getBytes();
-        System.out.println("response = " + response);
         return response;
     }
 
