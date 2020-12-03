@@ -23,8 +23,8 @@ public class FilesTest {
     @Test
     public void submitListing() throws IOException, ExceptionInfo {
         String get = "GET /listing HTTP/1.1";
-        server.submitRequest(get.getBytes());
-        String result = server.getBodyMessage();
+        handler.handle(get.getBytes());
+        String result = handler.getServer().getBodyMessage();
 
         assertTrue(result.contains("<ul>"));
         assertTrue(result.contains("<li><a href=\"/index.html\">index.html</a></li>"));
@@ -35,8 +35,8 @@ public class FilesTest {
     @Test
     public void submitListingImgs() throws IOException, ExceptionInfo {
         String get = "GET /listing/img HTTP/1.1";
-        server.submitRequest(get.getBytes());
-        String result = server.getBodyMessage();
+        handler.handle(get.getBytes());
+        String result = handler.getServer().getBodyMessage();
 
         assertTrue(result.contains("<ul>"));
         assertTrue(result.contains("<li><a href=\"/img/autobot.jpg\">autobot.jpg</a></li>"));
@@ -67,7 +67,7 @@ public class FilesTest {
     @Test
     public void serveJPG() throws IOException, ExceptionInfo {
         String jpg = "/img/autobot.jpg";
-        String get = "GET /img/autobot.jpg HTTP/1.1";
+        String get = "GET /img/autobot.jpg HTTP/1.1\r\n\r\n";
 
         byte[] body = server.convertFiletoBytes(jpg);
 

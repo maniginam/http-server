@@ -69,7 +69,7 @@ public class SocketHostTest {
 
         output = helper.getOutput();
         reader = helper.getReader();
-        output.write("hello world!\r\n\r\n".getBytes());
+        output.write("hello world!\n".getBytes());
         output.write("\n".getBytes());
         assertEquals("hello world!", reader.readLine());
     }

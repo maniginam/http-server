@@ -85,7 +85,7 @@ public class FormsTest {
         String post = "POST /form HTTP/1.1\r\n" +
                 "Name: file\r\n" +
                 "Content-Type: image/jpeg\r\n" +
-                "Content: /Users/maniginam/server-task/http-server/BruslyDog.jpeg\r\n" +
+                "Content: " + file + "\r\n" +
 //                "Content: /Users/maniginam/server-task/http-spec/testroot/img/autobot.jpg\r\n" +
                 "Content-Length: " + image.length;
 
