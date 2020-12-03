@@ -26,7 +26,7 @@ public class HttpServerTest {
         Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
         String fileContent = Files.readString(path, StandardCharsets.UTF_8);
 
-        server.submitRequest("GET HTTP/1.1");
+        server.submitRequest("GET HTTP/1.1".getBytes());
         String bodyMessage = server.getBodyMessage();
 
         assertEquals(fileContent, bodyMessage);
@@ -37,7 +37,7 @@ public class HttpServerTest {
         Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
         String fileContent = Files.readString(path, StandardCharsets.UTF_8);
 
-        server.submitRequest("GET / HTTP/1.1");
+        server.submitRequest("GET / HTTP/1.1".getBytes());
         String bodyMessage = server.getBodyMessage();
 
         assertEquals(fileContent, bodyMessage);
@@ -47,9 +47,25 @@ public class HttpServerTest {
     public void submitGarbage() {
         String msg = "GET /rex HTTP/1.1";
         assertThrows(ExceptionInfo.class, () -> {
-            server.submitRequest(msg);
+            server.submitRequest(msg.getBytes());
         });
+    }
 
+    @Test
+    public void requestWithNoBody() {
+        server.splitRequest("GET / HTTP/1.1\r\n\r\n".getBytes());
+
+        assertEquals(1, server.getNumberOfRequestParts());
+    }
+
+    @Test
+    public void requestWithBody() {
+        String body = "Rex is 3, and Leo is 1";
+        server.splitRequest(("GET / HTTP/1.1\r\n" +
+                "Content-Length: " + body.length() + "\r\n\r\n" +
+                body).getBytes());
+
+        assertEquals(2, server.getNumberOfRequestParts());
     }
 
 

@@ -30,14 +30,14 @@ public class HttpHandlerTest {
 
     @Test
     public void submitsBlankEntry() throws Exception {
-        byte[] result = handler.handle("GET HTTP/1.1");
+        byte[] result = handler.handle("GET HTTP/1.1".getBytes());
 
         assertArrayEquals(handler.getServer().getResponse(), result);
     }
 
     @Test
     public void submitsForwardSlashEntry() throws Exception {
-        byte[] result = handler.handle("GET / HTTP/1.1");
+        byte[] result = handler.handle("GET / HTTP/1.1".getBytes());
 
         assertArrayEquals(handler.getServer().getResponse(), result);
     }

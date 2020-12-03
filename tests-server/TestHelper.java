@@ -1,8 +1,6 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 public class TestHelper {
     public EchoHandler handler;
@@ -10,6 +8,7 @@ public class TestHelper {
     private Socket socket;
     private OutputStream output;
     private BufferedReader reader;
+    private InputStream input;
 
     public TestHelper() {
 
@@ -22,10 +21,14 @@ public class TestHelper {
 
     public void connect() throws IOException {
         socket = new Socket("localhost", 314);
+        input = socket.getInputStream();
         output = socket.getOutputStream();
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
+    public InputStream getInput() {
+        return input;
+    }
     public OutputStream getOutput() {
         return output;
     }
@@ -62,9 +65,12 @@ class EchoHandler implements Handler {
     public byte[] response;
 
     @Override
-    public byte[] handle(String message) throws IOException {
-        responder = new HttpResponder();
-        response = responder.respond("", message.getBytes());
+    public byte[] handle(byte[] message) throws IOException {
+        System.out.println("handling");
+        String msg = new String(message, StandardCharsets.UTF_8);
+        System.out.println("msg = " + msg);
+        response = msg.getBytes();
+        System.out.println("response = " + response);
         return response;
     }
 

@@ -22,8 +22,8 @@ public class FilesTest {
 
     @Test
     public void submitListing() throws IOException, ExceptionInfo {
-        String get = "Get /listing HTTP/1.1";
-        server.submitRequest(get);
+        String get = "GET /listing HTTP/1.1";
+        server.submitRequest(get.getBytes());
         String result = server.getBodyMessage();
 
         assertTrue(result.contains("<ul>"));
@@ -35,7 +35,7 @@ public class FilesTest {
     @Test
     public void submitListingImgs() throws IOException, ExceptionInfo {
         String get = "GET /listing/img HTTP/1.1";
-        server.submitRequest(get);
+        server.submitRequest(get.getBytes());
         String result = server.getBodyMessage();
 
         assertTrue(result.contains("<ul>"));
@@ -52,7 +52,7 @@ public class FilesTest {
         int contentLength = msg.length();
         String get = "GET /index.html HTTP/1.1";
 
-        handler.handle(get);
+        handler.handle(get.getBytes());
         String fields = handler.getServer().getFields();
         String result = handler.getServer().getBodyMessage();
 
@@ -71,7 +71,7 @@ public class FilesTest {
 
         byte[] body = server.convertFiletoBytes(jpg);
 
-        handler.handle(get);
+        handler.handle(get.getBytes());
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getBodyBytes();
 
@@ -88,7 +88,7 @@ public class FilesTest {
 
         byte[] body = server.convertFiletoBytes(png);
 
-        handler.handle(get);
+        handler.handle(get.getBytes());
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getBodyBytes();
 
@@ -105,7 +105,7 @@ public class FilesTest {
 
         byte[] body = server.convertFiletoBytes(pdf);
 
-        handler.handle(get);
+        handler.handle(get.getBytes());
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getBodyBytes();
 
