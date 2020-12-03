@@ -32,8 +32,9 @@ public class HttpServer {
     }
 
     public void submitRequest(byte[] request) throws ExceptionInfo, IOException {
+        bodyMessage = null;
+        bodyBytes = null;
         requestHeader = splitRequest(request)[0];
-        System.out.println("requestHeader = " + requestHeader);
 
         if (numberOfRequestParts > 1) {
             bodyLength = findBodyLength(requestHeader);
@@ -53,7 +54,6 @@ public class HttpServer {
 
     public String[] splitRequest(byte[] request) {
         String requestAsString = new String(request, StandardCharsets.UTF_8);
-        System.out.println("requestAsString = " + requestAsString);
         String[] splitRequest = requestAsString.split("\r\n\r\n");
         numberOfRequestParts = splitRequest.length;
         return splitRequest;
@@ -76,7 +76,6 @@ public class HttpServer {
                 bodyLength = Integer.parseInt(entity.split(" ")[1]);
             }
         }
-        System.out.println("bodyLength = " + bodyLength);
         return bodyLength;
     }
 
@@ -143,7 +142,7 @@ public class HttpServer {
         bodyMessage = "<ul>" + linkMsg + "</ul>";
         fields = "Content-Type: text/html";
         setHeader(200, fields);
-        getResponse();
+        setResponse();
     }
 
     private String getLinkName(String name, String child) {

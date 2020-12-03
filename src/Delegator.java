@@ -36,6 +36,7 @@ public class Delegator implements Runnable {
                         }
                     }
                     try {
+//                        response = host.getHandler().handle(line.getBytes());
                         response = host.getHandler().handle(request.toString().getBytes());
                     } catch (ExceptionInfo e) {
                         response = e.getMessage().getBytes();
@@ -44,7 +45,7 @@ public class Delegator implements Runnable {
                     output.flush();
 
                 } else {
-                    Thread.sleep(5);
+                    Thread.sleep(1);
                 }
             }
         } catch (IOException | InterruptedException e) {

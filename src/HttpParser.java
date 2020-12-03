@@ -13,9 +13,9 @@ public class HttpParser {
     public void setHeaderField(String msg, byte[] bodyBytes, String fields) {
         if(msg != null)
             contentLength = msg.length();
-        if(bodyBytes != null)
+        if(bodyBytes != null) {
             contentLength = bodyBytes.length;
-
+        }
         headerField = "Server: " + serverName + "\r\n" +
                 "Content-Length: " + contentLength + "\r\n";
         if (!fields.isBlank()) {
