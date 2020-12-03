@@ -36,13 +36,14 @@ public class Delegator implements Runnable {
                         }
                     }
                     try {
-//                        response = host.getHandler().handle(line.getBytes());
                         response = host.getHandler().handle(request.toString().getBytes());
                     } catch (ExceptionInfo e) {
                         response = e.getMessage().getBytes();
                     }
-                    send(response);
-                    output.flush();
+                    if (response != null) {
+                        send(response);
+                        output.flush();
+                    }
 
                 } else {
                     Thread.sleep(1);

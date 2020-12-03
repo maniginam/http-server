@@ -11,7 +11,6 @@ public class FormInputHandler implements FormHandler {
         boxMap = new HashMap<>();
 
         setFormName("GET Form");
-        System.out.println("response = " + response);
         createBoxMap(requestArgs);
         setResponse();
 

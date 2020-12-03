@@ -3,7 +3,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,6 +19,7 @@ public class HttpServer {
     private int numberOfRequestParts;
     private String requestHeader;
     private byte[] requestBody;
+    private int multiPartRequestCounter = 0;
 
 
     public HttpServer(String root) {
@@ -80,10 +80,14 @@ public class HttpServer {
     }
 
     private void respondToPOST(String request, byte[] requestBody) throws IOException {
-        bodyMessage = new PostFormHandler().handle(request, requestBody);
-        fields = "";
-        setHeader(200, fields);
-        setResponse();
+        multiPartRequestCounter = multiPartRequestCounter + 1;
+        PostFormHandler poster = new PostFormHandler();
+        bodyMessage = poster.handle(request, multiPartRequestCounter);
+        if (multiPartRequestCounter == 3) {
+            fields = "";
+            setHeader(200, fields);
+            setResponse();
+        }
     }
 
 
