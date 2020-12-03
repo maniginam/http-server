@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 public class Delegator implements Runnable {
     private final SocketHost host;
@@ -16,17 +17,26 @@ public class Delegator implements Runnable {
     @Override
     public void run() {
         byte[] response;
-        String contentLengthString;
+
         try {
             InputStream input = socket.getInputStream();
             BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            StringBuilder request = new StringBuilder();
+            String line;
 
             while (host.isRunning() && socket.isConnected()) {
-                if (input.available() > 0) {
-                    //FIX THIS AS THIS WAS MENTIONED COULD POSE ISSUES
-                    String line = reader.readLine();
+                if(input.available() > 0) {
+                    line = reader.readLine();
+                    while (line != null) {
+                        request.append(line).append("\r\n");
+                        line = reader.readLine();
+
+                        if(line.isEmpty()) {
+                            break;
+                        }
+                    }
                     try {
-                        response = host.getHandler().handle(line);
+                        response = host.getHandler().handle(request.toString().getBytes());
                     } catch (ExceptionInfo e) {
                         response = e.getMessage().getBytes();
                     }
@@ -34,7 +44,7 @@ public class Delegator implements Runnable {
                     output.flush();
 
                 } else {
-                    Thread.sleep(1);
+                    Thread.sleep(5);
                 }
             }
         } catch (IOException | InterruptedException e) {

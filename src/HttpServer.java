@@ -1,11 +1,11 @@
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
-
-import static java.lang.Integer.parseInt;
 
 public class HttpServer {
     private final HttpParser parser;
@@ -13,10 +13,14 @@ public class HttpServer {
     public String bodyMessage;
     public String fields;
     public byte[] response;
-    public HttpResponder responder;
     public byte[] bodyBytes;
     private String header;
+    int bodyLength;
     private Map<String, String> contentTypes = new HashMap<String, String>();
+    private int numberOfRequestParts;
+    private String requestHeader;
+    private byte[] requestBody;
+
 
     public HttpServer(String root) {
         contentTypes.put("html", "text");
@@ -25,41 +29,93 @@ public class HttpServer {
         contentTypes.put("png", "image");
         this.root = root;
         parser = new HttpParser();
-        responder = new HttpResponder();
     }
 
-    public void submitRequest(String msg) throws ExceptionInfo, IOException {
-//       **********************************
-//        System.out.println("msg = " + msg);
-//        *********************************
+    public void submitRequest(byte[] request) throws ExceptionInfo, IOException {
+        requestHeader = splitRequest(request)[0];
+        System.out.println("requestHeader = " + requestHeader);
 
-        String request = msg.split(" ")[1];
+        if (numberOfRequestParts > 1) {
+            bodyLength = findBodyLength(requestHeader);
+            setRequestBody(request);
+        }
 
-        if (!request.contains("favicon")) {
-            if (request.matches("HTTP/1.1") || request.matches("/")) {
-                getDefaultRoot();
-            } else if (request.matches("/listing")) {
-                getLinks("listing", "");
-            } else if (request.matches("/listing/img")) {
-                getLinks("listing", "img");
-            } else if (request.contains(".")) {
-                analyzeRequest(request);
-            } else if (request.contains("form?")) {
-                bodyMessage = new FormHandler().handle(request, root + "/forms.html");
-            } else {
-                throw new ExceptionInfo(msg, "The page you are looking for was not found, but the Sun is 93 million miles away!");
+        if (!requestHeader.contains("favicon")) {
+            String method = requestHeader.split(" ")[0];
+            String target = requestHeader.split(" ")[1];
+            if (method.contains("GET"))
+                respondToGET(requestHeader, target);
+            else if (method.contains("POST")) {
+                respondToPOST(requestHeader, requestBody);
             }
         }
+    }
+
+    public String[] splitRequest(byte[] request) {
+        String requestAsString = new String(request, StandardCharsets.UTF_8);
+        System.out.println("requestAsString = " + requestAsString);
+        String[] splitRequest = requestAsString.split("\r\n\r\n");
+        numberOfRequestParts = splitRequest.length;
+        return splitRequest;
+    }
+
+    private void setRequestBody(byte[] request) {
+        if (bodyLength > 0) {
+            ByteBuffer buffer = ByteBuffer.wrap(request);
+            requestBody = new byte[bodyLength];
+            buffer.get(requestBody, 0, bodyLength);
+
+        }
+    }
+
+    private int findBodyLength(String header) {
+        String[] splitHeader = header.split("\r\n");
+
+        for (String entity : splitHeader) {
+            if (entity.contains("Content-Length")) {
+                bodyLength = Integer.parseInt(entity.split(" ")[1]);
+            }
+        }
+        System.out.println("bodyLength = " + bodyLength);
+        return bodyLength;
+    }
+
+    private void respondToPOST(String request, byte[] requestBody) throws IOException {
+        bodyMessage = new PostFormHandler().handle(request, requestBody);
+        fields = "";
+        setHeader(200, fields);
+        setResponse();
+    }
+
+
+    private void respondToGET(String msg, String target) throws IOException, ExceptionInfo {
+        if (target.matches("HTTP/1.1") || target.matches("/")) {
+            getDefaultRoot();
+        } else if (target.matches("/listing")) {
+            getLinks("listing", "");
+        } else if (target.matches("/listing/img")) {
+            getLinks("listing", "img");
+        } else if (target.contains(".")) {
+            analyzeTarget(target);
+        } else if (target.contains("form?")) {
+            getFormResponse(target);
+        } else
+            throw new ExceptionInfo(msg, "<h1>The page you are looking for is 93 million miles away!</h1>");
+    }
+
+    private void getFormResponse(String target) throws IOException {
+        bodyMessage = new FormInputHandler().handle(target);
+        fields = "";
+        setHeader(200, fields);
+        setResponse();
     }
 
 
     private void getDefaultRoot() throws IOException {
         getFileMessage("index.html");
         fields = "";
-        parser.setStatus(200, "OK");
-        parser.setHeaderField(bodyMessage, bodyBytes, fields);
-        parser.getHeader();
-        response = responder.respond(parser.getHeader(), bodyMessage.getBytes());
+        setHeader(200, fields);
+        setResponse();
     }
 
     private void getLinks(String parent, String child) throws IOException {
@@ -86,9 +142,8 @@ public class HttpServer {
         }
         bodyMessage = "<ul>" + linkMsg + "</ul>";
         fields = "Content-Type: text/html";
-        parser.setStatus(200, "OK");
-        parser.setHeaderField(bodyMessage, bodyBytes, fields);
-        response = responder.respond(parser.getHeader(), bodyMessage.getBytes());
+        setHeader(200, fields);
+        getResponse();
     }
 
     private String getLinkName(String name, String child) {
@@ -99,8 +154,8 @@ public class HttpServer {
         }
     }
 
-    private void analyzeRequest(String request) throws IOException {
-        String[] requestBreakdown = request.split("[/.]");
+    private void analyzeTarget(String target) throws IOException {
+        String[] requestBreakdown = target.split("[/.]");
         int requestIndex = requestBreakdown.length - 1;
         String targetType = requestBreakdown[requestIndex];
         String targetName = requestBreakdown[requestIndex - 1];
@@ -108,21 +163,18 @@ public class HttpServer {
 
         if (targetType.matches("html")) {
             bodyMessage = getFileMessage(name);
-
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType;
 
-            createHeader(200, fields);
-            response = responder.respond(header, bodyMessage.getBytes());
+            setHeader(200, fields);
+            setResponse();
+
         } else if (targetType.matches("pdf")) {
-
             bodyBytes = convertFiletoBytes(name);
-
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType + ", " +
                     "Content-Disposition: inline; name=\"" + targetName + "\"; filename=\"" + name + "\", ";
 
-            createHeader(200, fields);
-
-            response = responder.respond(parser.getHeader(), bodyBytes);
+            setHeader(200, fields);
+            setResponse();
 
         } else {
             bodyBytes = convertFiletoBytes("img/" + name);
@@ -132,9 +184,8 @@ public class HttpServer {
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType + ", " +
                     "Content-Disposition: inline; name=\"" + targetName + "\"; filename=\"" + name + "\", ";
 
-            createHeader(200, fields);
-
-            response = responder.respond(parser.getHeader(), bodyBytes);
+            setHeader(200, fields);
+            setResponse();
         }
     }
 
@@ -142,8 +193,8 @@ public class HttpServer {
         String pathName = root + "/" + fileName;
         Path path = Path.of(pathName);
         bodyMessage = Files.readString(path, StandardCharsets.UTF_8);
-        return bodyMessage;
 
+        return bodyMessage;
     }
 
     public byte[] convertFiletoBytes(String fileName) throws IOException {
@@ -154,10 +205,28 @@ public class HttpServer {
         return inputStream.readAllBytes();
     }
 
-    private void createHeader(int statusCode, String fields) {
+    private void setHeader(int statusCode, String fields) {
         parser.setStatus(statusCode, "OK");
         parser.setHeaderField(bodyMessage, bodyBytes, fields);
         header = parser.getHeader();
+    }
+
+    private void setResponse() throws IOException {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        byte headerBytes[] = parser.getHeader().getBytes();
+        output.write(headerBytes);
+
+        if (bodyMessage != null) {
+            output.write(bodyMessage.getBytes());
+        }
+
+        if (bodyBytes != null) {
+            output.write(bodyBytes);
+        }
+
+        output.write("\r\n".getBytes());
+
+        response = output.toByteArray();
     }
 
     public byte[] getResponse() {
@@ -174,6 +243,22 @@ public class HttpServer {
 
     public byte[] getBodyBytes() {
         return bodyBytes;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public int getNumberOfRequestParts() {
+        return numberOfRequestParts;
+    }
+
+    public String getRequestHeader() {
+        return requestHeader;
+    }
+
+    public byte[] getRequestBody() {
+        return requestBody;
     }
 }
 

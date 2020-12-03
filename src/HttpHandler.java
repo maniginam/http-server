@@ -14,7 +14,7 @@ public class HttpHandler implements Handler {
     }
 
     @Override
-    public byte[] handle(String msg) throws ExceptionInfo, IOException {
+    public byte[] handle(byte[] msg) throws ExceptionInfo, IOException {
             server.submitRequest(msg);
             return server.getResponse();
     }
