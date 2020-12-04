@@ -23,8 +23,8 @@ public class FilesTest {
     @Test
     public void submitListing() throws IOException, ExceptionInfo {
         String get = "GET /listing HTTP/1.1";
-        handler.handle(get.getBytes());
-        String result = handler.getServer().getBodyMessage();
+        handler.handle(get, null);
+        String result = handler.getServer().getResponseBody();
 
         assertTrue(result.contains("<ul>"));
         assertTrue(result.contains("<li><a href=\"/index.html\">index.html</a></li>"));
@@ -35,8 +35,8 @@ public class FilesTest {
     @Test
     public void submitListingImgs() throws IOException, ExceptionInfo {
         String get = "GET /listing/img HTTP/1.1";
-        handler.handle(get.getBytes());
-        String result = handler.getServer().getBodyMessage();
+        handler.handle(get, null);
+        String result = handler.getServer().getResponseBody();
 
         assertTrue(result.contains("<ul>"));
         assertTrue(result.contains("<li><a href=\"/img/autobot.jpg\">autobot.jpg</a></li>"));
@@ -52,9 +52,9 @@ public class FilesTest {
         int contentLength = msg.length();
         String get = "GET /index.html HTTP/1.1";
 
-        handler.handle(get.getBytes());
+        handler.handle(get, null);
         String fields = handler.getServer().getFields();
-        String result = handler.getServer().getBodyMessage();
+        String result = handler.getServer().getResponseBody();
 
 
         assertEquals(msg, result);
@@ -71,7 +71,7 @@ public class FilesTest {
 
         byte[] body = server.convertFiletoBytes(jpg);
 
-        handler.handle(get.getBytes());
+        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getBodyBytes();
 
@@ -88,7 +88,7 @@ public class FilesTest {
 
         byte[] body = server.convertFiletoBytes(png);
 
-        handler.handle(get.getBytes());
+        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getBodyBytes();
 
@@ -105,7 +105,7 @@ public class FilesTest {
 
         byte[] body = server.convertFiletoBytes(pdf);
 
-        handler.handle(get.getBytes());
+        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getBodyBytes();
 

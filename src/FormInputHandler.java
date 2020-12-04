@@ -12,7 +12,7 @@ public class FormInputHandler implements FormHandler {
 
         setFormName("GET Form");
         createBoxMap(requestArgs);
-        setResponse();
+        setResponseBody();
 
         return response;
     }
@@ -36,7 +36,7 @@ public class FormInputHandler implements FormHandler {
         }
     }
 
-    public void setResponse() {
+    public void setResponseBody() {
         for (String box : boxMap.keySet()) {
             response = response + "<li>" + box + ": " +
                     boxMap.get(box) + "</li>\r\n" +

@@ -1,5 +1,4 @@
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,8 +7,9 @@ import java.util.Map;
 
 public class HttpServer {
     private final HttpParser parser;
+    private final PostFormHandler poster;
     private String root;
-    public String bodyMessage;
+    public String responseBody;
     public String fields;
     public byte[] response;
     public byte[] bodyBytes;
@@ -20,6 +20,8 @@ public class HttpServer {
     private String requestHeader;
     private byte[] requestBody;
     private int multiPartRequestCounter = 0;
+    private RequestParser requestParser;
+    private String fileName;
 
 
     public HttpServer(String root) {
@@ -29,21 +31,20 @@ public class HttpServer {
         contentTypes.put("png", "image");
         this.root = root;
         parser = new HttpParser();
+        requestParser = new RequestParser();
+        poster = new PostFormHandler();
     }
 
-    public void submitRequest(byte[] request) throws ExceptionInfo, IOException {
-        bodyMessage = null;
+    public void submitRequest(String requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
+        this.requestHeader = requestHeader;
+        this.requestBody = requestBody;
+        responseBody = null;
         bodyBytes = null;
-        requestHeader = splitRequest(request)[0];
 
-        if (numberOfRequestParts > 1) {
-            bodyLength = findBodyLength(requestHeader);
-            setRequestBody(request);
-        }
+        String method = requestHeader.split(" ")[0];
+        String target = requestHeader.split(" ")[1];
 
         if (!requestHeader.contains("favicon")) {
-            String method = requestHeader.split(" ")[0];
-            String target = requestHeader.split(" ")[1];
             if (method.contains("GET"))
                 respondToGET(requestHeader, target);
             else if (method.contains("POST")) {
@@ -52,44 +53,29 @@ public class HttpServer {
         }
     }
 
-    public String[] splitRequest(byte[] request) {
-        String requestAsString = new String(request, StandardCharsets.UTF_8);
-        String[] splitRequest = requestAsString.split("\r\n\r\n");
-        numberOfRequestParts = splitRequest.length;
-        return splitRequest;
-    }
-
-    private void setRequestBody(byte[] request) {
-        if (bodyLength > 0) {
-            ByteBuffer buffer = ByteBuffer.wrap(request);
-            requestBody = new byte[bodyLength];
-            buffer.get(requestBody, 0, bodyLength);
-
-        }
-    }
-
-    private int findBodyLength(String header) {
-        String[] splitHeader = header.split("\r\n");
-
-        for (String entity : splitHeader) {
-            if (entity.contains("Content-Length")) {
-                bodyLength = Integer.parseInt(entity.split(" ")[1]);
-            }
-        }
-        return bodyLength;
-    }
-
     private void respondToPOST(String request, byte[] requestBody) throws IOException {
         multiPartRequestCounter = multiPartRequestCounter + 1;
-        PostFormHandler poster = new PostFormHandler();
-        bodyMessage = poster.handle(request, multiPartRequestCounter);
+        poster.handle(request, multiPartRequestCounter);
+
         if (multiPartRequestCounter == 3) {
+            if(poster.getFileName() != null) {
+                fileName = root + "/img/" + poster.getFileName();
+                File file = new File(fileName);
+//                FileInputStream inputStream = new FileInputStream(file);
+//
+//                ByteArrayInputStream input = new ByteArrayInputStream(inputStream.readNBytes(bodyLength));
+                System.out.println("fileName = " + fileName);
+                OutputStream output = new FileOutputStream(file);
+                output.write(requestBody);
+                output.close();
+            }
+            responseBody = poster.getResponseBody();
             fields = "";
             setHeader(200, fields);
             setResponse();
-        }
+        } else if(multiPartRequestCounter < 3)
+            poster.handle(request, multiPartRequestCounter);
     }
-
 
     private void respondToGET(String msg, String target) throws IOException, ExceptionInfo {
         if (target.matches("HTTP/1.1") || target.matches("/")) {
@@ -107,12 +93,11 @@ public class HttpServer {
     }
 
     private void getFormResponse(String target) throws IOException {
-        bodyMessage = new FormInputHandler().handle(target);
+        responseBody = new FormInputHandler().handle(target);
         fields = "";
         setHeader(200, fields);
         setResponse();
     }
-
 
     private void getDefaultRoot() throws IOException {
         getFileMessage("index.html");
@@ -143,7 +128,7 @@ public class HttpServer {
             linkMsg = linkMsg + links[i];
             i++;
         }
-        bodyMessage = "<ul>" + linkMsg + "</ul>";
+        responseBody = "<ul>" + linkMsg + "</ul>";
         fields = "Content-Type: text/html";
         setHeader(200, fields);
         setResponse();
@@ -165,7 +150,7 @@ public class HttpServer {
         String name = targetName + "." + targetType;
 
         if (targetType.matches("html")) {
-            bodyMessage = getFileMessage(name);
+            responseBody = getFileMessage(name);
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType;
 
             setHeader(200, fields);
@@ -195,9 +180,9 @@ public class HttpServer {
     private String getFileMessage(String fileName) throws IOException {
         String pathName = root + "/" + fileName;
         Path path = Path.of(pathName);
-        bodyMessage = Files.readString(path, StandardCharsets.UTF_8);
+        responseBody = Files.readString(path, StandardCharsets.UTF_8);
 
-        return bodyMessage;
+        return responseBody;
     }
 
     public byte[] convertFiletoBytes(String fileName) throws IOException {
@@ -210,7 +195,7 @@ public class HttpServer {
 
     private void setHeader(int statusCode, String fields) {
         parser.setStatus(statusCode, "OK");
-        parser.setHeaderField(bodyMessage, bodyBytes, fields);
+        parser.setHeaderField(responseBody, bodyBytes, fields);
         header = parser.getHeader();
     }
 
@@ -219,8 +204,8 @@ public class HttpServer {
         byte headerBytes[] = parser.getHeader().getBytes();
         output.write(headerBytes);
 
-        if (bodyMessage != null) {
-            output.write(bodyMessage.getBytes());
+        if (responseBody != null) {
+            output.write(responseBody.getBytes());
         }
 
         if (bodyBytes != null) {
@@ -240,8 +225,9 @@ public class HttpServer {
         return fields;
     }
 
-    public String getBodyMessage() {
-        return bodyMessage;
+    public String getResponseBody() {
+        System.out.println("bodyMessage = " + responseBody);
+        return responseBody;
     }
 
     public byte[] getBodyBytes() {
@@ -262,6 +248,10 @@ public class HttpServer {
 
     public byte[] getRequestBody() {
         return requestBody;
+    }
+
+    public RequestParser getRequestParser() {
+        return requestParser;
     }
 }
 

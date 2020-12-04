@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.Socket;
-import java.nio.ByteBuffer;
 
 public class Delegator implements Runnable {
     private final SocketHost host;
@@ -16,33 +15,51 @@ public class Delegator implements Runnable {
 
     @Override
     public void run() {
+        String header;
+        byte[] body;
         byte[] response;
 
         try {
             InputStream input = socket.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            StringBuilder request = new StringBuilder();
-            String line;
+            BufferedInputStream buffedInput = new BufferedInputStream(input);
+
+            ByteArrayOutputStream outputHeader = new ByteArrayOutputStream();
+            ByteArrayOutputStream outputBody = new ByteArrayOutputStream();
 
             while (host.isRunning() && socket.isConnected()) {
-                if(input.available() > 0) {
-                    line = reader.readLine();
-                    while (line != null) {
-                        request.append(line).append("\r\n");
-                        line = reader.readLine();
-
-                        if(line.isEmpty()) {
-                            break;
+                if (input.available() > 0) {
+                    int b = buffedInput.read();
+                    int i = 0;
+                    int bodySize = host.getHandler().getBodySize();
+                    while (bodySize == -1) {
+                        outputHeader.write(b);
+                        host.getHandler().handleHeader(outputHeader.toByteArray());
+                        bodySize = host.getHandler().getBodySize();
+                        if (bodySize == -1) {
+                            i++;
+                            b = buffedInput.read();
+                        } else {
+                            buffedInput.mark(i);
                         }
                     }
+
+                    header = host.getHandler().getRequestHeader();
+                    if (bodySize > 0) {
+                        outputBody.write(buffedInput.readNBytes(bodySize));
+                        body = outputBody.toByteArray();
+                        System.out.println("outputBody.toByteArray() = " + outputBody.toByteArray());
+                    } else {
+                        body = null;
+                    }
+
                     try {
-                        response = host.getHandler().handle(request.toString().getBytes());
+                        response = host.getHandler().handle(header, body);
                     } catch (ExceptionInfo e) {
                         response = e.getMessage().getBytes();
                     }
                     if (response != null) {
                         send(response);
-                        output.flush();
+                        outputHeader.flush();
                     }
 
                 } else {

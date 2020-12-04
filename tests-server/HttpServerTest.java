@@ -13,12 +13,14 @@ public class HttpServerTest {
     private HttpServer server;
     private HttpParser parser;
     private HttpHandler handler;
+    private RequestParser requester;
 
     @BeforeEach
     public void setup() throws IOException {
         handler = new HttpHandler(3141, "/Users/maniginam/server-task/http-spec/testroot");
         server = new HttpServer("/Users/maniginam/server-task/http-spec/testroot");
         parser = new HttpParser();
+        requester = new RequestParser();
     }
 
     @Test
@@ -26,8 +28,8 @@ public class HttpServerTest {
         Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
         String fileContent = Files.readString(path, StandardCharsets.UTF_8);
 
-        server.submitRequest("GET HTTP/1.1".getBytes());
-        String bodyMessage = server.getBodyMessage();
+        server.submitRequest("GET HTTP/1.1", null);
+        String bodyMessage = server.getResponseBody();
 
         assertEquals(fileContent, bodyMessage);
     }
@@ -37,35 +39,28 @@ public class HttpServerTest {
         Path path = Path.of("/Users/maniginam/server-task/http-spec/testroot/index.html");
         String fileContent = Files.readString(path, StandardCharsets.UTF_8);
 
-        server.submitRequest("GET / HTTP/1.1".getBytes());
-        String bodyMessage = server.getBodyMessage();
+        server.submitRequest("GET / HTTP/1.1", null);
+        String bodyMessage = server.getResponseBody();
 
         assertEquals(fileContent, bodyMessage);
     }
 
     @Test
     public void submitGarbage() {
-        String msg = "GET /rex HTTP/1.1";
+        String header = "GET /rex HTTP/1.1";
         assertThrows(ExceptionInfo.class, () -> {
-            server.submitRequest(msg.getBytes());
+            server.submitRequest(header, null);
         });
     }
 
     @Test
-    public void requestWithNoBody() {
-        server.splitRequest("GET / HTTP/1.1\r\n\r\n".getBytes());
-
-        assertEquals(1, server.getNumberOfRequestParts());
-    }
-
-    @Test
-    public void requestWithBody() {
+    public void requestWithBody() throws IOException, ExceptionInfo {
         String body = "Rex is 3, and Leo is 1";
-        server.splitRequest(("GET / HTTP/1.1\r\n" +
-                "Content-Length: " + body.length() + "\r\n\r\n" +
-                body).getBytes());
+        server.submitRequest(("GET / HTTP/1.1\r\n" +
+                "Content-Length: " + body.length() + "\r\n\r\n"), body.getBytes());
 
-        assertEquals(2, server.getNumberOfRequestParts());
+        String result = new String(server.getRequestBody(), StandardCharsets.UTF_8);
+        assertEquals(body, result);
     }
 
 

@@ -2,10 +2,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.util.List;
 
@@ -20,13 +17,16 @@ public class SocketHostTest {
     private OutputStream output;
     private BufferedReader reader;
     private EchoHandlerFactory handlerFactory;
+    private BufferedInputStream buffedInput;
+    private RequestParser parser;
 
     @BeforeEach
     public void setup() {
         helper = new TestHelper();
         handlerFactory = new EchoHandlerFactory();
         handler = handlerFactory.getHandler();
-        host = new SocketHost(314, handlerFactory);
+        host = new SocketHost(3141, handlerFactory);
+        parser = new RequestParser();
     }
 
     @AfterEach
@@ -46,7 +46,7 @@ public class SocketHostTest {
 
     @Test
     public void port() {
-        assertEquals(314, host.getPort());
+        assertEquals(3141, host.getPort());
         assertEquals(handler, host.getHandler());
     }
 
@@ -65,62 +65,76 @@ public class SocketHostTest {
     public void connectionWithOneEcho() throws Exception {
         host.start();
         helper.connect();
-
-
+        buffedInput = helper.getBuffedInput();
         output = helper.getOutput();
-        reader = helper.getReader();
-        output.write("hello world!\n".getBytes());
-        output.write("\n".getBytes());
-        assertEquals("hello world!", reader.readLine());
+
+        output.write("hello world!\r\n".getBytes());
+        output.write("\r\n".getBytes());
+        buffedInput.read();
+
+        String msg = host.getHandler().getRequestHeader();
+
+        assertEquals("hello world!\r\n\r\n", msg);
     }
 
-//    @Test
-//    public void connectionWithTwoEchos() throws Exception {
-//        host.start();
-//        helper.connect();
-//        output = helper.getOutput();
-//        reader = helper.getReader();
-//
-//        output.write("hello world!\n".getBytes());
-//        output.write("\r\n".getBytes());
-//        assertEquals("hello world!", reader.readLine());
-//
-//        output.write("hello mars!\n".getBytes());
-//        output.write("\r\n".getBytes());
-//        assertEquals("hello world!\n\r\nhello mars!", reader.readLine());
-//    }
+    @Test
+    public void connectionWithTwoEchos() throws Exception {
+        host.start();
+        helper.connect();
+        buffedInput = helper.getBuffedInput();
+        output = helper.getOutput();
+
+        output.write("hello world!\r\n".getBytes());
+        output.write("hello mars!\r\n".getBytes());
+        output.write("\r\n".getBytes());
+        buffedInput.read();
+
+        String msg = host.getHandler().getRequestHeader();
+        assertEquals("hello world!\r\nhello mars!\r\n\r\n", msg);
+    }
 
     @Test
     public void twoConnections() throws Exception {
         host.start();
         helper.connect();
         helper.connect();
+        buffedInput = helper.getBuffedInput();
         output = helper.getOutput();
-        reader = helper.getReader();
 
-        output.write("hello world!\n".getBytes());
-        output.write("\n".getBytes());
-        assertEquals("hello world!", reader.readLine());
+        output.write("hello world!\r\n".getBytes());
+        output.write("\r\n".getBytes());
+        buffedInput.read();
+
+        String msg = host.getHandler().getRequestHeader();
+
+        assertEquals("hello world!\r\n\r\n", msg);
     }
+    @Test
+    public void echoWithByteBody() throws IOException {
+        host.start();
+        helper.connect();
+        buffedInput = helper.getBuffedInput();
+        output = helper.getOutput();
 
-//    @Test
-//    public void initCalledOnConnect() throws Exception {
-//        host.start();
-//        helper.connect();
-//
-//        Thread.sleep(100);
-//        assertTrue(handler.initWasCalled);
-//    }
+        String header = ("hello world!\r\n" +
+                "Content-Length: 92990\r\n" +
+                "\r\n");
+        File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
+        FileInputStream input = new FileInputStream(file);
+        byte[] image = input.readAllBytes();
+        ByteArrayOutputStream outputImg = new ByteArrayOutputStream();
 
-//    @Test
-//    public void initMessageSent() throws Exception {
-//        host.start();
-//        handler.initMessage = "hello World!\n";
-//        helper.connect();
-//        reader = helper.getReader();
-//
-//        assertEquals("hello World!", reader.readLine());
-//    }
+        outputImg.write(image);
+        output.write((header).getBytes());
+        output.write(image);
+        buffedInput.read();
+
+        int bodySize = handler.getBodySize();
+
+        assertEquals(92990, bodySize);
+        assertEquals(header, host.getHandler().getRequestHeader());
+        assertArrayEquals(outputImg.toByteArray(), host.getHandler().getBody());
+    }
 
     @Test
     public void cleanClose() throws Exception {
@@ -136,19 +150,43 @@ public class SocketHostTest {
         }
     }
 
-    @Test
-    public void readTwoLines() throws IOException {
-        host.start();
-        helper.connect();
-        output = helper.getOutput();
-        reader = helper.getReader();
-
-        output.write("hello world!\r\n".getBytes());
-        output.write("hello mars!\r\n".getBytes());
-        output.write("\r\n".getBytes());
-
-//        ****** ASK ABOUT THIS!
-//        assertEquals("hello world!\r\nhello mars!\r\n\r\n", reader.readLine());
-    }
-
+//    @Test
+//    public void POSTrequest() throws IOException {
+//        host.start();
+//        helper.connect();
+//        buffedInput = helper.getBuffedInput();
+//        output = helper.getOutput();
+//
+//        File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
+//        FileInputStream input = new FileInputStream(file);
+//        byte[] image = input.readAllBytes();
+//        ByteArrayOutputStream requestImage = new ByteArrayOutputStream();
+//
+//        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
+//                "Name: file\r\n" +
+//                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
+//                "Content: " + file + "\r\n" +
+//                "Content-Length: " + image.length;
+//
+//        String requestHeader2 = requestHeader1 + "\r\n------Rex&Leo\r\n" +
+//                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
+//                "Content-Type: image/jpeg";
+//
+//        output.write((requestHeader2 + "\r\n\r\n").getBytes());
+//        output.write(image);
+//        buffedInput.read();
+//
+//        String requestHeaderResult = host.getHandler().getRequestHeader();
+//        byte[] requestBodyResult = host.getHandler().getBody();
+//        String responseBodyMsgResult = host.getHandler().getResponseBody();
+//
+//
+//        assertEquals(requestHeader2, requestHeaderResult);
+//        assertTrue(requestHeaderResult.contains("Content-Type: image/jpeg"));
+//        assertTrue(response.contains("<h2>POST Form</h2>"));
+//        assertTrue(response.contains("<li>file name: BruslyDog.jpeg</li>"));
+//        assertTrue(response.contains("<li>file size: 92990</li>"));
+//        assertTrue(response.contains("<li>content type: application/octet-stream</li>"));v
+//
+//    }
 }

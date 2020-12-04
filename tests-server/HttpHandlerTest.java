@@ -2,9 +2,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,14 +27,14 @@ public class HttpHandlerTest {
 
     @Test
     public void submitsBlankEntry() throws Exception {
-        byte[] result = handler.handle("GET HTTP/1.1".getBytes());
+        byte[] result = handler.handle("GET HTTP/1.1", null);
 
         assertArrayEquals(handler.getServer().getResponse(), result);
     }
 
     @Test
     public void submitsForwardSlashEntry() throws Exception {
-        byte[] result = handler.handle("GET / HTTP/1.1".getBytes());
+        byte[] result = handler.handle("GET / HTTP/1.1", null);
 
         assertArrayEquals(handler.getServer().getResponse(), result);
     }

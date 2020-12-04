@@ -9,6 +9,8 @@ public class TestHelper {
     private OutputStream output;
     private BufferedReader reader;
     private InputStream input;
+    private BufferedInputStream buffedInput;
+    private ByteArrayOutputStream outBytes;
 
     public TestHelper() {
 
@@ -20,9 +22,11 @@ public class TestHelper {
     }
 
     public void connect() throws IOException {
-        socket = new Socket("localhost", 314);
+        socket = new Socket("localhost", 3141);
         input = socket.getInputStream();
+        buffedInput = new BufferedInputStream(input);
         output = socket.getOutputStream();
+        outBytes = new ByteArrayOutputStream();
         reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
@@ -32,14 +36,12 @@ public class TestHelper {
     public OutputStream getOutput() {
         return output;
     }
-
-    public BufferedReader getReader() {
-        return reader;
-    }
-
     public Socket getSocket() {
         return socket;
     }
+    public BufferedInputStream getBuffedInput() { return buffedInput; }
+    public ByteArrayOutputStream getOutBytes() { return outBytes; }
+
 }
 
 class EchoHandlerFactory implements HandlerFactory {
@@ -59,30 +61,50 @@ class EchoHandlerFactory implements HandlerFactory {
 class EchoHandler implements Handler {
 
     public boolean initWasCalled;
-
     public String initMessage;
-    public HttpResponder responder;
     public byte[] response;
+    private int bodySize = -1;
+    private RequestParser parser;
+    private String header;
+    private byte[] body;
 
     @Override
-    public byte[] handle(byte[] message) throws IOException {
-        String msg = new String(message, StandardCharsets.UTF_8);
-        response = msg.getBytes();
+    public void handleHeader(byte[] input) {
+        parser = new RequestParser();
+        parser.interpretHeader(input);
+        bodySize = parser.getBodySize();
+        header = parser.getHeader();
+    }
+
+    @Override
+    public String getRequestHeader() {
+        return header;
+    }
+
+    @Override
+    public byte[] getBody() {
+        return body;
+    }
+
+    @Override
+    public byte[] handle(String header, byte[] body) throws IOException {
+        setRequestBody(body);
+        response = header.getBytes();
         return response;
     }
 
-    public String init() {
-        initWasCalled = true;
-//        String[] lines = new String[0];
-//        for(String line : lines) {
-//            initMessage = initMessage + line;
-//        }
-        return initMessage;
+    public void setRequestBody(byte[] body) {
+        this.body = body;
     }
 
     @Override
     public String getRoot() {
         return null;
+    }
+
+    @Override
+    public int getBodySize() {
+        return bodySize;
     }
 
 }

@@ -7,6 +7,6 @@ public interface FormHandler {
 
     void setFormName(String name);
 
-    void setResponse();
+    void setResponseBody();
 
 }
