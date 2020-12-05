@@ -30,7 +30,8 @@ public class Delegator implements Runnable {
                 if (input.available() > 0) {
                     int b = buffedInput.read();
                     int i = 0;
-                    int bodySize = host.getHandler().getBodySize();
+                    int bodySize = -1;
+                    body = null;
                     while (bodySize == -1) {
                         outputHeader.write(b);
                         host.getHandler().handleHeader(outputHeader.toByteArray());
@@ -38,19 +39,17 @@ public class Delegator implements Runnable {
                         if (bodySize == -1) {
                             i++;
                             b = buffedInput.read();
+                        } else if (bodySize > 0) {
+                            outputBody.write(buffedInput.readNBytes(bodySize));
+                            body = outputBody.toByteArray();
                         } else {
-                            buffedInput.mark(i);
+                            body = null;
                         }
+                        buffedInput.mark(5);
+                        buffedInput.reset();
                     }
-
                     header = host.getHandler().getRequestHeader();
-                    if (bodySize > 0) {
-                        outputBody.write(buffedInput.readNBytes(bodySize));
-                        body = outputBody.toByteArray();
-                        System.out.println("outputBody.toByteArray() = " + outputBody.toByteArray());
-                    } else {
-                        body = null;
-                    }
+                    System.out.println("header = " + header);
 
                     try {
                         response = host.getHandler().handle(header, body);
@@ -60,6 +59,7 @@ public class Delegator implements Runnable {
                     if (response != null) {
                         send(response);
                         outputHeader.flush();
+                        outputBody.flush();
                     }
 
                 } else {

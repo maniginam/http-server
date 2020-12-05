@@ -13,5 +13,11 @@ public interface Handler {
 
     void setRequestBody(byte[] body);
 
-    byte[] getBody();
+    byte[] getRequestBody();
+
+    String getResponseHeader();
+
+    byte[] getResponseBody();
+
+    String getResponseBodyMessage();
 }

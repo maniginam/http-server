@@ -7,7 +7,6 @@ public class PostFormHandler implements FormHandler {
     private HashMap<String, String> entities;
     private HashMap<String, String> entityNames;
     private String fileName;
-    private String filename;
     private String responseBody;
 
     public PostFormHandler() {
@@ -17,24 +16,32 @@ public class PostFormHandler implements FormHandler {
         entityNames.put("Content-Type:", "content type:");
     }
 
+    private void resetAll() {
+        formName = null;
+        entities = null;
+        fileName = null;
+        responseBody = null;
+    }
+
     public void handle(String requestHeader, int multipartNumber) {
+        resetAll();
 //        System.out.println("*******REQUEST HEADER " + multipartNumber + "**********\n " + requestHeader);
-        setFormName("POST Form");
 
-        if (multipartNumber == 3) {
-            List<String> entityList = new ArrayList<>();
+//        if (multipartNumber == 3) {
+        List<String> entityList = new ArrayList<>();
 
-            for (String line : requestHeader.split("\r\n")) {
-                entityList.add(line);
-            }
-
-            entityList.remove(0);
-            entities = new HashMap<>();
-
-            createBoxMap(entityList);
-            setResponseBody();
-
+        for (String line : requestHeader.split("\r\n")) {
+            entityList.add(line);
         }
+
+        entityList.remove(0);
+        entities = new HashMap<>();
+
+        setFormName("POST Form");
+        createBoxMap(entityList);
+        setResponseBody();
+
+//        }
     }
 
     public void setFormName(String name) {
@@ -65,6 +72,9 @@ public class PostFormHandler implements FormHandler {
                 if (entityNames.get(entity) != null) {
                     entities.put(entityNames.get(entity), input);
                 }
+                System.out.println("fileName = " + fileName);
+                if (fileName != null)
+                    entities.put("file name:", fileName);
 
 
             }

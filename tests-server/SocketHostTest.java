@@ -119,21 +119,27 @@ public class SocketHostTest {
         String header = ("hello world!\r\n" +
                 "Content-Length: 92990\r\n" +
                 "\r\n");
+        byte[] headerBytes = header.getBytes();
         File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
         FileInputStream input = new FileInputStream(file);
         byte[] image = input.readAllBytes();
         ByteArrayOutputStream outputImg = new ByteArrayOutputStream();
 
+        byte[] fullRequest = new byte[headerBytes.length + image.length];
+        System.arraycopy(headerBytes, 0, fullRequest, 0, headerBytes.length);
+        System.arraycopy(image, 0, fullRequest, headerBytes.length, image.length);
+
         outputImg.write(image);
-        output.write((header).getBytes());
-        output.write(image);
+        output.write(fullRequest);
+//        output.write((header).getBytes());
+//        output.write(image);
         buffedInput.read();
 
         int bodySize = handler.getBodySize();
 
         assertEquals(92990, bodySize);
         assertEquals(header, host.getHandler().getRequestHeader());
-        assertArrayEquals(outputImg.toByteArray(), host.getHandler().getBody());
+        assertArrayEquals(outputImg.toByteArray(), host.getHandler().getRequestBody());
     }
 
     @Test

@@ -59,14 +59,14 @@ class EchoHandlerFactory implements HandlerFactory {
 }
 
 class EchoHandler implements Handler {
-
-    public boolean initWasCalled;
-    public String initMessage;
     public byte[] response;
     private int bodySize = -1;
     private RequestParser parser;
     private String header;
     private byte[] body;
+    private String responseHeader;
+    private byte[] responseBody;
+    private String responseBodyMessage;
 
     @Override
     public void handleHeader(byte[] input) {
@@ -82,8 +82,23 @@ class EchoHandler implements Handler {
     }
 
     @Override
-    public byte[] getBody() {
+    public byte[] getRequestBody() {
         return body;
+    }
+
+    @Override
+    public String getResponseHeader() {
+        return responseHeader;
+    }
+
+    @Override
+    public byte[] getResponseBody() {
+        return responseBody;
+    }
+
+    @Override
+    public String getResponseBodyMessage() {
+        return responseBodyMessage;
     }
 
     @Override

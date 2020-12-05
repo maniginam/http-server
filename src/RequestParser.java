@@ -1,47 +1,55 @@
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RequestParser {
     private int numberOfRequestParts;
-    private int bodySize = -1;
+    public int bodySize;
     private String header;
     private byte[] body;
     private String method;
     private String target;
 
     public void interpretHeader(byte[] input) {
+        resetAll();
         header = new String(input, StandardCharsets.UTF_8);
         if (header.contains("\r\n\r\n")) {
             bodySize = findBodySize(header);
+            if(bodySize == -1) {
+                bodySize = 0;
+            }
         }
     }
 
-    public String[] splitRequest(byte[] request) {
-        String requestAsString = new String(request, StandardCharsets.UTF_8);
-        String[] splitRequest = requestAsString.split("\r\n\r\n");
-
-        header = splitRequest[0];
-        method = header.split(" ")[0];
-        target = header.split(" ")[1];
-        numberOfRequestParts = splitRequest.length;
-
-        if (numberOfRequestParts > 1) {
-            bodySize = findBodySize(header);
-            setBody(request);
-        }
-        return splitRequest;
+    private void resetAll() {
+        bodySize = -1;
+        header = null;
+        body = null;
     }
 
     public int findBodySize(String header) {
         String[] splitHeader = header.split("\r\n");
+        List<String> entityList = new ArrayList<>();
+
+        for (String line : header.split("\r\n")) {
+            if(!(line.isBlank() || line.length() < 3))
+                entityList.add(line);
+        }
+
+        entityList.remove(0);
 
         for (String entity : splitHeader) {
-            if (entity.contains("Content-Length:")) {
+            if (entity.contains("Content-Length")) {
                 bodySize = Integer.parseInt(entity.split(" ")[1]);
-            } else bodySize = 0;
+            }
         }
 
         return bodySize;
+    }
+
+    private void setBodySize(int bodySize) {
+        this.bodySize = bodySize;
     }
 
     private void setBody(byte[] request) {

@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class HttpHandler implements Handler {
@@ -8,6 +9,9 @@ public class HttpHandler implements Handler {
     private RequestParser parser;
     private String header;
     private byte[] requestBody;
+    private String responseHeader;
+    private byte[] responseBody;
+    private String responseBodyMessage;
 
     public HttpHandler(int port, String root) throws IOException {
         this.port = port;
@@ -18,6 +22,9 @@ public class HttpHandler implements Handler {
 
     @Override
     public void handleHeader(byte[] input) {
+        responseHeader = null;
+        responseBody = null;
+        responseBodyMessage = null;
         parser.interpretHeader(input);
         header = parser.getHeader();
         bodySize = parser.getBodySize();
@@ -25,9 +32,24 @@ public class HttpHandler implements Handler {
 
     @Override
     public byte[] handle(String header, byte[] body) throws ExceptionInfo, IOException {
+        responseHeader = null;
+        responseBody = null;
+        responseBodyMessage = null;
         setRequestBody(body);
         server.submitRequest(header, body);
-            return server.getResponse();
+        responseHeader = server.getResponseHeader();
+        responseBodyMessage = server.getResponseBodyMessage();
+        responseBody = server.getResponseBodyBytes();
+
+        ByteArrayOutputStream response = new ByteArrayOutputStream();
+        response.write(responseHeader.getBytes());
+        if (responseBodyMessage != null)
+            response.write(responseBodyMessage.getBytes());
+        if (responseBody != null)
+            response.write(responseBody);
+
+        response.close();
+        return response.toByteArray();
     }
 
     @Override
@@ -41,8 +63,23 @@ public class HttpHandler implements Handler {
     }
 
     @Override
-    public byte[] getBody() {
+    public byte[] getRequestBody() {
         return requestBody;
+    }
+
+    @Override
+    public String getResponseHeader() {
+        return responseHeader;
+    }
+
+    @Override
+    public byte[] getResponseBody() {
+        return responseBody;
+    }
+
+    @Override
+    public String getResponseBodyMessage() {
+        return responseBodyMessage;
     }
 
 

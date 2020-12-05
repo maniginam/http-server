@@ -29,7 +29,7 @@ public class HttpServerTest {
         String fileContent = Files.readString(path, StandardCharsets.UTF_8);
 
         server.submitRequest("GET HTTP/1.1", null);
-        String bodyMessage = server.getResponseBody();
+        String bodyMessage = server.getResponseBodyMessage();
 
         assertEquals(fileContent, bodyMessage);
     }
@@ -40,7 +40,7 @@ public class HttpServerTest {
         String fileContent = Files.readString(path, StandardCharsets.UTF_8);
 
         server.submitRequest("GET / HTTP/1.1", null);
-        String bodyMessage = server.getResponseBody();
+        String bodyMessage = server.getResponseBodyMessage();
 
         assertEquals(fileContent, bodyMessage);
     }

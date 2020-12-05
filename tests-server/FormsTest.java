@@ -26,7 +26,7 @@ public class FormsTest {
     @Test
     public void formIsCalled() throws IOException, ExceptionInfo {
         handler.handle("GET /forms.html HTTP/1.1", null);
-        String response = handler.getServer().getResponseBody();
+        String response = handler.getServer().getResponseBodyMessage();
 
         assertTrue(response.contains("<h2>Get Form</h2>"));
         assertTrue(response.contains("<form method=\"get\" action=\"/form\""));
@@ -37,7 +37,7 @@ public class FormsTest {
     public void oneFormEntry() throws IOException, ExceptionInfo {
         handler.handle("GET /form?foo=1", null);
 
-        String body = handler.getServer().getResponseBody();
+        String body = handler.getServer().getResponseBodyMessage();
 
         assertTrue(body.contains("<h2>GET Form</h2>"));
         assertTrue(body.contains("<li>foo: 1</li>"));
@@ -49,7 +49,7 @@ public class FormsTest {
         String request = "GET /form?foo=1&bar=2";
         handler.handle(request, null);
 
-        String body = handler.getServer().getResponseBody();
+        String body = handler.getServer().getResponseBodyMessage();
 
         assertTrue(body.contains("<h2>GET Form</h2>"));
         assertTrue(body.contains("<li>foo: 1</li>"));
@@ -61,7 +61,7 @@ public class FormsTest {
         String request = "GET /form?foo=Rex&bar=Leo";
         handler.handle(request, null);
 
-        String body = handler.getServer().getResponseBody();
+        String body = handler.getServer().getResponseBodyMessage();
 
         assertTrue(body.contains("<h2>GET Form</h2>"));
         assertTrue(body.contains("<li>foo: Rex</li>"));
@@ -71,7 +71,7 @@ public class FormsTest {
     @Test
     public void postIsPresent() throws IOException, ExceptionInfo {
         handler.handle("GET /forms.html HTTP/1.1", null);
-        String response = handler.getServer().getResponseBody();
+        String response = handler.getServer().getResponseBodyMessage();
 
         assertTrue(response.contains("<h2>Post Form</h2>"));
         assertTrue(response.contains("<form method=\"post\" action=\"/form\" enctype=\"multipart/form-data\">"));
@@ -79,46 +79,50 @@ public class FormsTest {
         assertTrue(response.contains("<input type=\"submit\" value=\"Submit\""));
     }
 
-    @Test
-    public void postImage() throws IOException, ExceptionInfo {
-        host.start();
-        helper.connect();
-        OutputStream output = helper.getOutput();
-        BufferedInputStream buffedInput = helper.getBuffedInput();
-
-        File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
-        FileInputStream input = new FileInputStream(file);
-        byte[] image = input.readAllBytes();
-        ByteArrayOutputStream requestImage = new ByteArrayOutputStream();
-
-        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
-                "Name: file\r\n" +
-                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
-                "Content: " + file + "\r\n" +
-                "Content-Length: " + image.length;
-
-        String requestHeader2 = requestHeader1 + "\r\n------Rex&Leo\r\n" +
-                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
-                "Content-Type: image/jpeg";
-
-        requestImage.write((requestHeader2 + "\r\n\r\n").getBytes());
-        requestImage.write(image);
-
-        handler.handle(requestHeader1, null);
-        handler.handle(requestHeader2, null);
-        handler.handle(requestHeader2, requestImage.toByteArray());
-
-        String requestHeaderResult = handler.getServer().getRequestHeader();
-        String response = handler.getServer().getResponseBody();
-
-        assertEquals(requestHeader2, requestHeaderResult);
-        assertTrue(requestHeaderResult.contains("Content-Type: image/jpeg"));
-        assertTrue(response.contains("<h2>POST Form</h2>"));
-        assertTrue(response.contains("<li>file name: BruslyDog.jpeg</li>"));
-        assertTrue(response.contains("<li>file size: 92990</li>"));
-        assertTrue(response.contains("<li>content type: application/octet-stream</li>"));
-
-    }
+//    @Test
+//    public void postImage() throws IOException, ExceptionInfo {
+//        host.start();
+//        helper.connect();
+//        OutputStream output = helper.getOutput();
+//        BufferedInputStream buffedInput = helper.getBuffedInput();
+//
+//        File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
+//        FileInputStream input = new FileInputStream(file);
+//        byte[] image = input.readAllBytes();
+//        ByteArrayOutputStream requestImage = new ByteArrayOutputStream();
+//
+//        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
+//                "Name: file\r\n" +
+//                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
+//                "Content: " + file + "\r\n" +
+//                "Content-Length: " + image.length;
+//
+//        String requestHeader2 = requestHeader1 + "\r\n------Rex&Leo\r\n" +
+//                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
+//                "Content-Type: image/jpeg\r\n\r\n";
+//
+//        output.write(requestHeader2.getBytes());
+//        output.write(image);
+//        buffedInput.read();
+//        buffedInput.readNBytes(image.length);
+//
+//        requestImage.write(image);
+//        String requestHeaderResult = host.getHandler().getRequestHeader();
+//        byte[] requestBodyResult = host.getHandler().getRequestBody();
+//        String responseHeaderResult = host.getHandler().getResponseHeader();
+//        String responseBodyMessageResult = host.getHandler().getResponseBodyMessage();
+//        byte[] responseBodyBytesResult = host.getHandler().getResponseBody();
+//
+//        assertEquals(requestHeader2, requestHeaderResult);
+//        assertArrayEquals(requestImage.toByteArray(), requestBodyResult);
+//        assertTrue(requestHeaderResult.contains("Content-Type: image/jpeg"));
+//        assertTrue(responseBodyMessageResult.contains("<h2>POST Form</h2>"));
+//        assertTrue(responseBodyMessageResult.contains("<li>file name: BruslyDog.jpeg</li>"));
+//        assertTrue(responseBodyMessageResult.contains("<li>file size: 92990</li>"));
+//        assertTrue(responseBodyMessageResult.contains("<li>content type: application/octet-stream</li>"));
+//        assertTrue(responseHeaderResult.contains("HTTP/1.1 200 OK"));
+//
+//    }
 
     @Test
     public void boxMapWDisposition() throws IOException, ExceptionInfo {

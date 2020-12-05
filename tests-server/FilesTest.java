@@ -24,7 +24,7 @@ public class FilesTest {
     public void submitListing() throws IOException, ExceptionInfo {
         String get = "GET /listing HTTP/1.1";
         handler.handle(get, null);
-        String result = handler.getServer().getResponseBody();
+        String result = handler.getServer().getResponseBodyMessage();
 
         assertTrue(result.contains("<ul>"));
         assertTrue(result.contains("<li><a href=\"/index.html\">index.html</a></li>"));
@@ -36,7 +36,7 @@ public class FilesTest {
     public void submitListingImgs() throws IOException, ExceptionInfo {
         String get = "GET /listing/img HTTP/1.1";
         handler.handle(get, null);
-        String result = handler.getServer().getResponseBody();
+        String result = handler.getServer().getResponseBodyMessage();
 
         assertTrue(result.contains("<ul>"));
         assertTrue(result.contains("<li><a href=\"/img/autobot.jpg\">autobot.jpg</a></li>"));
@@ -54,7 +54,7 @@ public class FilesTest {
 
         handler.handle(get, null);
         String fields = handler.getServer().getFields();
-        String result = handler.getServer().getResponseBody();
+        String result = handler.getServer().getResponseBodyMessage();
 
 
         assertEquals(msg, result);
@@ -68,12 +68,12 @@ public class FilesTest {
     public void serveJPG() throws IOException, ExceptionInfo {
         String jpg = "/img/autobot.jpg";
         String get = "GET /img/autobot.jpg HTTP/1.1\r\n\r\n";
-
-        byte[] body = server.convertFiletoBytes(jpg);
+        server.convertFiletoBytes(jpg);
+        byte[] body = server.responseBodyBytes;
 
         handler.handle(get, null);
         String fields = handler.getServer().getFields();
-        byte[] bodyResult = handler.getServer().getBodyBytes();
+        byte[] bodyResult = handler.getServer().getResponseBodyBytes();
 
         assertTrue(fields.contains("Content-Type"));
         assertTrue(fields.contains("Content-Disposition"));
@@ -86,11 +86,13 @@ public class FilesTest {
         String png = "/img/decepticon.png";
         String get = "GET /img/decepticon.png HTTP/1.1";
 
-        byte[] body = server.convertFiletoBytes(png);
+        server.convertFiletoBytes(png);
+        byte[] body = server.responseBodyBytes;
+
 
         handler.handle(get, null);
         String fields = handler.getServer().getFields();
-        byte[] bodyResult = handler.getServer().getBodyBytes();
+        byte[] bodyResult = handler.getServer().getResponseBodyBytes();
 
         assertTrue(fields.contains("Content-Type"));
         assertTrue(fields.contains("Content-Disposition"));
@@ -103,11 +105,13 @@ public class FilesTest {
         String pdf = "hello.pdf";
         String get = "GET /hello.pdf HTTP/1.1";
 
-        byte[] body = server.convertFiletoBytes(pdf);
+        server.convertFiletoBytes(pdf);
+        byte[] body = server.responseBodyBytes;
+
 
         handler.handle(get, null);
         String fields = handler.getServer().getFields();
-        byte[] bodyResult = handler.getServer().getBodyBytes();
+        byte[] bodyResult = handler.getServer().getResponseBodyBytes();
 
         assertTrue(fields.contains("Content-Type"));
         assertTrue(fields.contains("Content-Disposition"));
