@@ -18,59 +18,63 @@ public class Delegator implements Runnable {
         String header;
         byte[] body;
         byte[] response;
+        ByteArrayOutputStream outputHeader;
+        ByteArrayOutputStream outputHeader2;
+        ByteArrayOutputStream outputBody;
 
         try {
             InputStream input = socket.getInputStream();
             BufferedInputStream buffedInput = new BufferedInputStream(input);
 
-            ByteArrayOutputStream outputHeader = new ByteArrayOutputStream();
-            ByteArrayOutputStream outputBody = new ByteArrayOutputStream();
-
             while (host.isRunning() && socket.isConnected()) {
+                int bodySize = -1;
+                body = null;
+                int requests = 0;
                 if (input.available() > 0) {
-                    int b = buffedInput.read();
-                    int i = 0;
-                    int bodySize = -1;
-                    body = null;
+                    outputHeader = new ByteArrayOutputStream();
+                    outputBody = new ByteArrayOutputStream();
                     while (bodySize == -1) {
+                        int b = buffedInput.read();
                         outputHeader.write(b);
                         host.getHandler().handleHeader(outputHeader.toByteArray());
                         bodySize = host.getHandler().getBodySize();
-                        if (bodySize == -1) {
-                            i++;
-                            b = buffedInput.read();
-                        } else if (bodySize > 0) {
+                        header = host.getHandler().getRequestHeader();
+                        if (bodySize > 0) {
                             outputBody.write(buffedInput.readNBytes(bodySize));
                             body = outputBody.toByteArray();
                         } else {
-                            body = null;
-                        }
-                        buffedInput.mark(5);
-                        buffedInput.reset();
+                        body = null;
                     }
-                    header = host.getHandler().getRequestHeader();
+                }
+                header = host.getHandler().getRequestHeader();
                     System.out.println("header = " + header);
 
-                    try {
-                        response = host.getHandler().handle(header, body);
-                    } catch (ExceptionInfo e) {
-                        response = e.getMessage().getBytes();
-                    }
-                    if (response != null) {
-                        send(response);
-                        outputHeader.flush();
-                        outputBody.flush();
-                    }
-
-                } else {
-                    Thread.sleep(1);
+                try {
+                    response = host.getHandler().handle(header, body);
+                } catch (ExceptionInfo e) {
+                    response = e.getMessage().getBytes();
                 }
+
+                if (response != null) {
+                    send(response);
+                    output.flush();
+                }
+
+            } else{
+                Thread.sleep(1);
             }
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
         }
-        host.getDelegators().remove(this);
+    } catch(IOException |
+    InterruptedException e)
+
+    {
+        e.printStackTrace();
     }
+        host.getDelegators().
+
+    remove(this);
+
+}
 
     public void start() throws IOException {
         thread = new Thread(this);

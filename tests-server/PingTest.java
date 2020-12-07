@@ -29,7 +29,7 @@ public class PingTest {
         String body = server.getResponseBodyMessage();
 
         assertTrue(header.contains("HTTP/1.1 200 OK"));
-        assertTrue(body.contains("<h1>Ping</h1>"));
+        assertTrue(body.contains("<h2>Ping</h2>"));
         assertTrue(body.contains("<li>start time: "));
         assertTrue(body.contains("<li>end time: "));
         assertTrue(body.contains("<li>sleep seconds: 0</li>"));

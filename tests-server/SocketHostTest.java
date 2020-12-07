@@ -131,8 +131,6 @@ public class SocketHostTest {
 
         outputImg.write(image);
         output.write(fullRequest);
-//        output.write((header).getBytes());
-//        output.write(image);
         buffedInput.read();
 
         int bodySize = handler.getBodySize();
@@ -155,44 +153,5 @@ public class SocketHostTest {
             assertFalse(delegator.getThread().isAlive());
         }
     }
-
-//    @Test
-//    public void POSTrequest() throws IOException {
-//        host.start();
-//        helper.connect();
-//        buffedInput = helper.getBuffedInput();
-//        output = helper.getOutput();
-//
-//        File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
-//        FileInputStream input = new FileInputStream(file);
-//        byte[] image = input.readAllBytes();
-//        ByteArrayOutputStream requestImage = new ByteArrayOutputStream();
-//
-//        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
-//                "Name: file\r\n" +
-//                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
-//                "Content: " + file + "\r\n" +
-//                "Content-Length: " + image.length;
-//
-//        String requestHeader2 = requestHeader1 + "\r\n------Rex&Leo\r\n" +
-//                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
-//                "Content-Type: image/jpeg";
-//
-//        output.write((requestHeader2 + "\r\n\r\n").getBytes());
-//        output.write(image);
-//        buffedInput.read();
-//
-//        String requestHeaderResult = host.getHandler().getRequestHeader();
-//        byte[] requestBodyResult = host.getHandler().getBody();
-//        String responseBodyMsgResult = host.getHandler().getResponseBody();
-//
-//
-//        assertEquals(requestHeader2, requestHeaderResult);
-//        assertTrue(requestHeaderResult.contains("Content-Type: image/jpeg"));
-//        assertTrue(response.contains("<h2>POST Form</h2>"));
-//        assertTrue(response.contains("<li>file name: BruslyDog.jpeg</li>"));
-//        assertTrue(response.contains("<li>file size: 92990</li>"));
-//        assertTrue(response.contains("<li>content type: application/octet-stream</li>"));v
-//
-//    }
+    
 }

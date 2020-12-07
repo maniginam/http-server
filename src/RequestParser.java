@@ -4,20 +4,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RequestParser {
-    private int numberOfRequestParts;
     public int bodySize;
     private String header;
     private byte[] body;
-    private String method;
-    private String target;
+    private int part = 0;
 
     public void interpretHeader(byte[] input) {
-        resetAll();
+        bodySize = -1;
         header = new String(input, StandardCharsets.UTF_8);
+
         if (header.contains("\r\n\r\n")) {
             bodySize = findBodySize(header);
-            if(bodySize == -1) {
+            if (bodySize == -1) {
                 bodySize = 0;
+            }
+            if (header.contains("multipart/form-data")) {
+                String headers[] = header.split("\r\n\r\n");
+
             }
         }
     }
@@ -33,13 +36,13 @@ public class RequestParser {
         List<String> entityList = new ArrayList<>();
 
         for (String line : header.split("\r\n")) {
-            if(!(line.isBlank() || line.length() < 3))
+            if (!(line.isBlank() || line.length() < 3))
                 entityList.add(line);
         }
 
         entityList.remove(0);
 
-        for (String entity : splitHeader) {
+        for (String entity : entityList) {
             if (entity.contains("Content-Length")) {
                 bodySize = Integer.parseInt(entity.split(" ")[1]);
             }
@@ -61,10 +64,6 @@ public class RequestParser {
         }
     }
 
-    public int getPartsCount() {
-        return numberOfRequestParts;
-    }
-
     public byte[] getBody() {
         return body;
     }
@@ -73,13 +72,6 @@ public class RequestParser {
         return header;
     }
 
-    public String getMethod() {
-        return method;
-    }
-
-    public String getTarget() {
-        return target;
-    }
 
     public int getBodySize() {
         return bodySize;

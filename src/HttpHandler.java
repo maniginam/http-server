@@ -5,13 +5,14 @@ public class HttpHandler implements Handler {
     private String root;
     private int port;
     private HttpServer server;
-    private int bodySize;
+    private int bodySize = -1;
     private RequestParser parser;
     private String header;
     private byte[] requestBody;
     private String responseHeader;
     private byte[] responseBody;
     private String responseBodyMessage;
+    private  byte[] finalResponse;
 
     public HttpHandler(int port, String root) throws IOException {
         this.port = port;
@@ -31,25 +32,28 @@ public class HttpHandler implements Handler {
     }
 
     @Override
-    public byte[] handle(String header, byte[] body) throws ExceptionInfo, IOException {
+    public byte[] handle(String requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
+        bodySize = -1;
         responseHeader = null;
         responseBody = null;
         responseBodyMessage = null;
-        setRequestBody(body);
-        server.submitRequest(header, body);
+        setRequestBody(requestBody);
+        server.submitRequest(requestHeader, requestBody);
         responseHeader = server.getResponseHeader();
         responseBodyMessage = server.getResponseBodyMessage();
         responseBody = server.getResponseBodyBytes();
 
         ByteArrayOutputStream response = new ByteArrayOutputStream();
-        response.write(responseHeader.getBytes());
+        if (responseHeader != null)
+            response.write(responseHeader.getBytes());
         if (responseBodyMessage != null)
             response.write(responseBodyMessage.getBytes());
         if (responseBody != null)
             response.write(responseBody);
 
+        finalResponse = response.toByteArray();
         response.close();
-        return response.toByteArray();
+        return finalResponse;
     }
 
     @Override
@@ -95,5 +99,9 @@ public class HttpHandler implements Handler {
 
     public HttpServer getServer() {
         return server;
+    }
+
+    public byte[] getResponse() {
+        return finalResponse;
     }
 }

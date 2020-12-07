@@ -102,6 +102,11 @@ class EchoHandler implements Handler {
     }
 
     @Override
+    public byte[] getResponse() {
+        return response;
+    }
+
+    @Override
     public byte[] handle(String header, byte[] body) throws IOException {
         setRequestBody(body);
         response = header.getBytes();

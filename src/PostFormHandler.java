@@ -72,7 +72,6 @@ public class PostFormHandler implements FormHandler {
                 if (entityNames.get(entity) != null) {
                     entities.put(entityNames.get(entity), input);
                 }
-                System.out.println("fileName = " + fileName);
                 if (fileName != null)
                     entities.put("file name:", fileName);
 

@@ -20,4 +20,7 @@ public interface Handler {
     byte[] getResponseBody();
 
     String getResponseBodyMessage();
+
+    byte[] getResponse();
+
 }

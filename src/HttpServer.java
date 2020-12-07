@@ -13,8 +13,7 @@ public class HttpServer {
     public String fields;
     public byte[] response;
     public byte[] responseBodyBytes;
-    private String header;
-    int bodyLength;
+    private String responseHeader;
     private Map<String, String> contentTypes = new HashMap<String, String>();
     private int numberOfRequestParts;
     private String requestHeader;
@@ -22,7 +21,6 @@ public class HttpServer {
     private int multiPartRequestCounter = 0;
     private RequestParser requestParser;
     private String fileName;
-    private Ping ping;
 
 
     public HttpServer(String root) {
@@ -39,6 +37,7 @@ public class HttpServer {
     public void submitRequest(String requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
         this.requestHeader = requestHeader;
         this.requestBody = requestBody;
+        responseHeader = null;
         responseBodyMessage = null;
         responseBodyBytes = null;
 
@@ -55,25 +54,28 @@ public class HttpServer {
     }
 
     private void respondToPOST(String request, byte[] requestBody) throws IOException {
-        multiPartRequestCounter = multiPartRequestCounter + 1;
-        poster.handle(request, multiPartRequestCounter);
-
-        if (requestBody != null) {
-            if (poster.getFileName() != null) {
-                fileName = root + "/img/" + poster.getFileName();
-                File file = new File(fileName);
-                OutputStream output = new FileOutputStream(file);
-                output.write(requestBody);
-                output.close();
+        multiPartRequestCounter++;
+        if (multiPartRequestCounter == 3) {
+            poster.handle(request, multiPartRequestCounter);
+            if (requestBody != null) {
+                if (poster.getFileName() != null) {
+                    fileName = root + "/img/" + poster.getFileName();
+                    File file = new File(fileName);
+                    OutputStream output = new FileOutputStream(file);
+                    output.write(requestBody);
+                    output.close();
+                }
             }
+            responseBodyMessage = poster.getResponseBody();
+            System.out.println("responseBodyMessage = " + responseBodyMessage);
+            fields = "";
+            setHeader(200, fields);
+            setResponse();
+        } else {
+            fields = "";
+            setHeader(200, fields);
+            setResponse();
         }
-        responseBodyMessage = poster.getResponseBody();
-        System.out.println("responseBodyMessage = " + responseBodyMessage);
-        fields = "";
-        setHeader(200, fields);
-        setResponse();
-//        } else if(multiPartRequestCounter < 3)
-//            poster.handle(request, multiPartRequestCounter);
     }
 
     private void respondToGET(String msg, String target) throws IOException, ExceptionInfo {
@@ -123,7 +125,7 @@ public class HttpServer {
         names = directory.list();
         String[] links = new String[files.length];
         int i = 0;
-        String linkMsg = null;
+        String linkMsg = "";
         for (File file : files) {
             String name = names[i];
             String linkName = getLinkName(name, child);
@@ -132,11 +134,9 @@ public class HttpServer {
             } else if (file.isDirectory()) {
                 links[i] = "<li><a href=\"/" + parent + "/" + linkName + "\">" + name + "</a></li>";
             }
-
-            if (linkMsg == null)
-                linkMsg = links[i];
             linkMsg = linkMsg + links[i];
             i++;
+
         }
         responseBodyMessage = "<ul>" + linkMsg + "</ul>";
         fields = "Content-Type: text/html";
@@ -208,13 +208,16 @@ public class HttpServer {
     private void setHeader(int statusCode, String fields) {
         parser.setStatus(statusCode, "OK");
         parser.setHeaderField(responseBodyMessage, responseBodyBytes, fields);
-        header = parser.getHeader();
+        responseHeader = parser.getHeader();
     }
 
     private void setResponse() throws IOException {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        byte headerBytes[] = parser.getHeader().getBytes();
-        output.write(headerBytes);
+        byte[] headerBytes = parser.getHeader().getBytes();
+
+        if (headerBytes != null) {
+            output.write(headerBytes);
+        }
 
         if (responseBodyMessage != null) {
             output.write(responseBodyMessage.getBytes());
@@ -247,7 +250,7 @@ public class HttpServer {
     }
 
     public String getResponseHeader() {
-        return header;
+        return responseHeader;
     }
 
     public int getNumberOfRequestParts() {
