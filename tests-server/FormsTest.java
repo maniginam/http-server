@@ -100,26 +100,46 @@ public class FormsTest {
         ByteArrayOutputStream requestImage = new ByteArrayOutputStream();
         requestImage.write(image);
 
-        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
-                "Name: file\r\n" +
+        String requestHeader1 = "POST /form HTTP/1.1\n" +
+                "Host: localhost:1234\r\n" +
+                "Connection: keep-alive\r\n" +
+                "Content-Length: 93178\r\n" +
+                "Cache-Control: max-age=0\r\n" +
+                "Upgrade-Insecure-Requests: 1\r\n" +
+                "Origin: http://localhost:1234\r\n" +
                 "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
-                "Content: " + file + "\r\n" +
-                "Content-Length: " + image.length + "\r\n" +
-                "something blah\r\n";
+                "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36\r\n" +
+                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\n" +
+                "Sec-Fetch-Site: same-origin\\rn" +
+                "Sec-Fetch-Mode: navigate\r\n" +
+                "Sec-Fetch-User: ?1\r\n" +
+                "Sec-Fetch-Dest: document\r\n" +
+                "Referer: http://localhost:1234/forms.html\r\n" +
+                "Accept-Encoding: gzip, deflate, br\r\n" +
+                "Accept-Language: en-US,en;q=0.9\r\n\r\n";
+
+//
+//        "POST /form HTTP/1.1\r\n" +
+//                "Name: file\r\n" +
+//                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
+//                "Content: " + file + "\r\n" +
+//                "Content-Length: " + image.length + "\r\n" +
+//                "something blah\r\n";
 
         String requestHeader2 = requestHeader1 + "------Rex&Leo\r\n" +
                 "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
-                "Content-Type: image/jpeg\r\n";
+                "Content-Type: image/jpeg\r\n\r\n";
 
-        output1.write((requestHeader1 + "\r\n").getBytes());
-        buffedInput.read();
+//        output1.write((requestHeader1 + "\r\n").getBytes());
+//        buffedInput.read();
+//
+//        output2.write((requestHeader2 + "\r\n").getBytes());
+//        Thread.sleep(100);
 
-        output2.write((requestHeader2 + "\r\n").getBytes());
-        Thread.sleep(100);
-
-        output3.write((requestHeader2 + "\r\n").getBytes());
+        output3.write(requestHeader2.getBytes());
         output3.write(image);
         output3.write("\r\n\r\n".getBytes());
+        buffedInput.read();
         Thread.sleep(100);
 
 
@@ -149,7 +169,7 @@ public class FormsTest {
                 "Content-Disposition: form-data; name=\"file\"; filename=\"Leo.jpeg\"\r\n" +
                 "Content-Type: image/jpeg";
 
-        poster.handle(request, 3);
+        poster.handle(request, "Leo.jpeg".getBytes());
         String result = poster.getResponseBody();
 
         assertTrue(result.contains("<li>file name: Leo.jpeg</li>"));

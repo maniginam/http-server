@@ -4,14 +4,13 @@ public class ExceptionInfo extends Exception {
 
     public String message;
     private HttpParser parser;
-    private HttpResponder responder;
 
-    public ExceptionInfo (String request, String message) throws IOException {
+    public ExceptionInfo (String message) throws IOException {
         super(message);
         this.setMessage(message);
     }
 
-    public ExceptionInfo (String request, String message, Throwable cause) throws IOException {
+    public ExceptionInfo (String message, Throwable cause) throws IOException {
         super(message, cause);
         this.setMessage(message);
     }
@@ -21,7 +20,6 @@ public class ExceptionInfo extends Exception {
         }
 
     public void setMessage(String message) throws IOException {
-        responder = new HttpResponder();
         parser = new HttpParser();
         parser.setStatus(404, message);
         parser.setHeaderField(message, null, "");

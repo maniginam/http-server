@@ -15,7 +15,7 @@ public class Delegator implements Runnable {
 
     @Override
     public void run() {
-        String header;
+        String header = "";
         byte[] body;
         byte[] response;
         ByteArrayOutputStream outputHeader;
@@ -29,25 +29,20 @@ public class Delegator implements Runnable {
             while (host.isRunning() && socket.isConnected()) {
                 int bodySize = -1;
                 body = null;
-                int requests = 0;
                 if (input.available() > 0) {
                     outputHeader = new ByteArrayOutputStream();
-                    outputBody = new ByteArrayOutputStream();
                     while (bodySize == -1) {
                         int b = buffedInput.read();
                         outputHeader.write(b);
                         host.getHandler().handleHeader(outputHeader.toByteArray());
-                        bodySize = host.getHandler().getBodySize();
                         header = host.getHandler().getRequestHeader();
+                        bodySize = host.getHandler().getBodySize();
                         if (bodySize > 0) {
+                            outputBody = new ByteArrayOutputStream();
                             outputBody.write(buffedInput.readNBytes(bodySize));
                             body = outputBody.toByteArray();
-                        } else {
-                        body = null;
-                    }
+                        } else { body = null; }
                 }
-                header = host.getHandler().getRequestHeader();
-                    System.out.println("header = " + header);
 
                 try {
                     response = host.getHandler().handle(header, body);

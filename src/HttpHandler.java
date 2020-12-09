@@ -12,7 +12,7 @@ public class HttpHandler implements Handler {
     private String responseHeader;
     private byte[] responseBody;
     private String responseBodyMessage;
-    private  byte[] finalResponse;
+    private byte[] finalResponse;
 
     public HttpHandler(int port, String root) throws IOException {
         this.port = port;
@@ -22,13 +22,14 @@ public class HttpHandler implements Handler {
     }
 
     @Override
-    public void handleHeader(byte[] input) {
+    public void handleHeader(byte[] input) throws IOException {
         responseHeader = null;
         responseBody = null;
         responseBodyMessage = null;
         parser.interpretHeader(input);
         header = parser.getHeader();
-        bodySize = parser.getBodySize();
+//        ****************TEST IS GETITNG A -1 BODYSIZE HERE
+        bodySize = parser.getContentLength();
     }
 
     @Override

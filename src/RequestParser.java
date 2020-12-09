@@ -1,79 +1,102 @@
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RequestParser {
-    public int bodySize;
+    public int contentLength;
     private String header;
     private byte[] body;
     private int part = 0;
 
-    public void interpretHeader(byte[] input) {
-        bodySize = -1;
+    public void interpretHeader(byte[] input) throws IOException {
+        contentLength = -1;
         header = new String(input, StandardCharsets.UTF_8);
 
         if (header.contains("\r\n\r\n")) {
-            bodySize = findBodySize(header);
-            if (bodySize == -1) {
-                bodySize = 0;
-            }
+            contentLength = findContentLength(header);
             if (header.contains("multipart/form-data")) {
-                String headers[] = header.split("\r\n\r\n");
-
+                String headers[] = header.split("------");
+                if (headers.length > 1) {
+                    if (headers[1].contains("\r\n\r\n")) {
+                        contentLength = calcBodySize(headers[1]);
+                    } else {
+                        contentLength = -1;
+                    }
+                } else {
+                    contentLength = -1;
+                }
+                System.out.println("header = " + header);
+                System.out.println("contentLength = " + contentLength);
+            } else {
+                findContentLength(header);
+                if (contentLength == -1) {
+                    contentLength = 0;
+                }
             }
         }
     }
 
-    private void resetAll() {
-        bodySize = -1;
-        header = null;
-        body = null;
+    private int calcBodySize(String header) {
+        String fileName = "";
+        String[] header2Parts = header.split("\r\n");
+        if (header2Parts.length > 2) {
+            String disposition = header2Parts[1];
+            String[] dispositions = disposition.split("; ");
+            fileName = dispositions[2].split("=")[1];
+            fileName.replaceAll("\"", "");
+        }
+//        return contentLength - 172 - fileName.length();
+    return contentLength;
     }
 
-    public int findBodySize(String header) {
-        String[] splitHeader = header.split("\r\n");
-        List<String> entityList = new ArrayList<>();
-
-        for (String line : header.split("\r\n")) {
-            if (!(line.isBlank() || line.length() < 3))
-                entityList.add(line);
+    private void resetAll () {
+            contentLength = -1;
+            header = null;
+            body = null;
         }
 
-        entityList.remove(0);
+        public int findContentLength(String header) throws IOException {
+            String[] splitHeader = header.split("\r\n");
+            List<String> entityList = new ArrayList<>();
 
-        for (String entity : entityList) {
-            if (entity.contains("Content-Length")) {
-                bodySize = Integer.parseInt(entity.split(" ")[1]);
+            for (String line : header.split("\r\n")) {
+                if (!(line.isBlank() || line.length() < 3))
+                    entityList.add(line);
+            }
+
+            for (String entity : entityList) {
+                if (entity.contains("Content-Length")) {
+                    contentLength = Integer.parseInt(entity.split(" ")[1]);
+                }
+            }
+            return contentLength;
+        }
+
+        private void setContentLength(int contentLength){
+            this.contentLength = contentLength;
+        }
+
+        private void setBody ( byte[] request){
+            if (contentLength > 0) {
+                ByteBuffer buffer = ByteBuffer.wrap(request);
+                body = new byte[contentLength];
+                buffer.get(body, 0, contentLength);
+
             }
         }
 
-        return bodySize;
-    }
+        public byte[] getBody () {
+            return body;
+        }
 
-    private void setBodySize(int bodySize) {
-        this.bodySize = bodySize;
-    }
+        public String getHeader () {
+            return header;
+        }
 
-    private void setBody(byte[] request) {
-        if (bodySize > 0) {
-            ByteBuffer buffer = ByteBuffer.wrap(request);
-            body = new byte[bodySize];
-            buffer.get(body, 0, bodySize);
 
+        public int getContentLength() {
+            return contentLength;
         }
     }
-
-    public byte[] getBody() {
-        return body;
-    }
-
-    public String getHeader() {
-        return header;
-    }
-
-
-    public int getBodySize() {
-        return bodySize;
-    }
-}

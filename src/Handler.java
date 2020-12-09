@@ -7,7 +7,7 @@ public interface Handler {
 
     int getBodySize();
 
-    void handleHeader(byte[] input);
+    void handleHeader(byte[] input) throws IOException;
 
     String getRequestHeader();
 

@@ -1,6 +1,5 @@
 import java.io.*;
 import java.net.Socket;
-import java.nio.charset.StandardCharsets;
 
 public class TestHelper {
     public EchoHandler handler;
@@ -69,10 +68,10 @@ class EchoHandler implements Handler {
     private String responseBodyMessage;
 
     @Override
-    public void handleHeader(byte[] input) {
+    public void handleHeader(byte[] input) throws IOException {
         parser = new RequestParser();
         parser.interpretHeader(input);
-        bodySize = parser.getBodySize();
+        bodySize = parser.getContentLength();
         header = parser.getHeader();
     }
 

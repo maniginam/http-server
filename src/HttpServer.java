@@ -54,28 +54,26 @@ public class HttpServer {
     }
 
     private void respondToPOST(String request, byte[] requestBody) throws IOException {
-        multiPartRequestCounter++;
-        if (multiPartRequestCounter == 3) {
-            poster.handle(request, multiPartRequestCounter);
-            if (requestBody != null) {
-                if (poster.getFileName() != null) {
-                    fileName = root + "/img/" + poster.getFileName();
-                    File file = new File(fileName);
-                    OutputStream output = new FileOutputStream(file);
-                    output.write(requestBody);
-                    output.close();
-                }
+        if (requestBody != null) {
+            if (poster.getFileName() != null) {
+                fileName = root + "/img/" + poster.getFileName();
+                File file = new File(fileName);
+                OutputStream output = new FileOutputStream(file);
+                output.write(requestBody);
+                output.close();
             }
-            responseBodyMessage = poster.getResponseBody();
-            System.out.println("responseBodyMessage = " + responseBodyMessage);
-            fields = "";
-            setHeader(200, fields);
-            setResponse();
-        } else {
-            fields = "";
-            setHeader(200, fields);
-            setResponse();
         }
+        poster.handle(request, requestBody);
+        responseBodyMessage = poster.getResponseBody();
+        fields = "";
+        setResponseHeader(200, fields);
+        setResponse();
+        System.out.println("responseBodyMessage = " + responseBodyMessage);
+//        } else {
+//            fields = "";
+//            setHeader(200, fields);
+//            setResponse();
+//        }
     }
 
     private void respondToGET(String msg, String target) throws IOException, ExceptionInfo {
@@ -92,7 +90,7 @@ public class HttpServer {
         } else if (target.contains("/ping")) {
             respondToPing(target);
         } else
-            throw new ExceptionInfo(msg, "<h1>The page you are looking for is 93 million miles away!</h1>");
+            throw new ExceptionInfo("<h1>The page you are looking for is 93 million miles away!</h1>");
     }
 
     private void respondToPing(String target) throws IOException {
@@ -100,21 +98,21 @@ public class HttpServer {
         ping.respond();
         responseBodyMessage = ping.getResponse();
         fields = "";
-        setHeader(200, fields);
+        setResponseHeader(200, fields);
         setResponse();
     }
 
     private void getFormResponse(String target) throws IOException {
         responseBodyMessage = new FormInputHandler().handle(target);
         fields = "";
-        setHeader(200, fields);
+        setResponseHeader(200, fields);
         setResponse();
     }
 
     private void getDefaultRoot() throws IOException {
         setFileMessage("index.html");
         fields = "";
-        setHeader(200, fields);
+        setResponseHeader(200, fields);
         setResponse();
     }
 
@@ -140,7 +138,7 @@ public class HttpServer {
         }
         responseBodyMessage = "<ul>" + linkMsg + "</ul>";
         fields = "Content-Type: text/html";
-        setHeader(200, fields);
+        setResponseHeader(200, fields);
         setResponse();
     }
 
@@ -167,7 +165,7 @@ public class HttpServer {
             setFileMessage(name);
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType;
 
-            setHeader(200, fields);
+            setResponseHeader(200, fields);
             setResponse();
 
         } else if (targetType.matches("pdf")) {
@@ -175,7 +173,7 @@ public class HttpServer {
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType + ", " +
                     "Content-Disposition: inline; name=\"" + targetName + "\"; filename=\"" + name + "\", ";
 
-            setHeader(200, fields);
+            setResponseHeader(200, fields);
             setResponse();
 
         } else {
@@ -186,7 +184,7 @@ public class HttpServer {
             fields = "Content-Type: " + contentTypes.get(targetType) + "/" + targetType + ", " +
                     "Content-Disposition: inline; name=\"" + targetName + "\"; filename=\"" + name + "\", ";
 
-            setHeader(200, fields);
+            setResponseHeader(200, fields);
             setResponse();
         }
     }
@@ -205,7 +203,7 @@ public class HttpServer {
         responseBodyBytes = inputStream.readAllBytes();
     }
 
-    private void setHeader(int statusCode, String fields) {
+    private void setResponseHeader(int statusCode, String fields) {
         parser.setStatus(statusCode, "OK");
         parser.setHeaderField(responseBodyMessage, responseBodyBytes, fields);
         responseHeader = parser.getHeader();
@@ -215,9 +213,7 @@ public class HttpServer {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         byte[] headerBytes = parser.getHeader().getBytes();
 
-        if (headerBytes != null) {
-            output.write(headerBytes);
-        }
+        output.write(headerBytes);
 
         if (responseBodyMessage != null) {
             output.write(responseBodyMessage.getBytes());
@@ -227,7 +223,7 @@ public class HttpServer {
             output.write(responseBodyBytes);
         }
 
-        output.write("\r\n".getBytes());
+//        output.write("\r\n\r\n".getBytes());
 
         response = output.toByteArray();
         output.close();
