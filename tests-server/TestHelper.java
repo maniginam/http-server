@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.Map;
 
 public class TestHelper {
     public EchoHandler handler;
@@ -106,9 +107,9 @@ class EchoHandler implements Handler {
     }
 
     @Override
-    public byte[] handle(String header, byte[] body) throws IOException {
+    public byte[] handle(Map<String, String> header, byte[] body) throws IOException {
         setRequestBody(body);
-        response = header.getBytes();
+        response = header.get("status").getBytes();
         return response;
     }
 

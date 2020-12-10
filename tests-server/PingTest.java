@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,8 +25,10 @@ public class PingTest {
 
     @Test
     public void blankPing() throws IOException, ExceptionInfo {
+        Map<String, String> rqHeader = new HashMap<>();
+        rqHeader.put("status", "GET /ping HTTP/1.1");
 
-        server.submitRequest("GET /ping HTTP/1.1", null);
+        server.submitRequest(rqHeader, null);
         String header = server.getResponseHeader();
         String body = server.getResponseBodyMessage();
 
@@ -37,8 +41,10 @@ public class PingTest {
 
     @Test
     public void oneSecondPing() throws IOException, ExceptionInfo {
+        Map<String, String> rqHeader = new HashMap<>();
+        rqHeader.put("status", "GET /ping/1 HTTP/1.1");
 
-        server.submitRequest("GET /ping/1 HTTP/1.1", null);
+        server.submitRequest(rqHeader, null);
         String header = server.getResponseHeader();
         String body = server.getResponseBodyMessage();
 

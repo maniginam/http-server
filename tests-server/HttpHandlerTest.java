@@ -2,6 +2,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,14 +29,20 @@ public class HttpHandlerTest {
 
     @Test
     public void submitsBlankEntry() throws Exception {
-        byte[] result = handler.handle("GET HTTP/1.1", null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", "GET HTTP/1.1");
+
+        byte[] result = handler.handle(header, null);
 
         assertArrayEquals(handler.getResponse(), result);
     }
 
     @Test
     public void submitsForwardSlashEntry() throws Exception {
-        byte[] result = handler.handle("GET / HTTP/1.1", null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", "GET / HTTP/1.1");
+
+        byte[] result = handler.handle(header, null);
 
         assertArrayEquals(handler.getResponse(), result);
     }

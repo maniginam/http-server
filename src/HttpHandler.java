@@ -1,5 +1,6 @@
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 public class HttpHandler implements Handler {
     private String root;
@@ -33,11 +34,8 @@ public class HttpHandler implements Handler {
     }
 
     @Override
-    public byte[] handle(String requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
+    public byte[] handle(Map<String, String> requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
         bodySize = -1;
-        responseHeader = null;
-        responseBody = null;
-        responseBodyMessage = null;
         setRequestBody(requestBody);
         server.submitRequest(requestHeader, requestBody);
         responseHeader = server.getResponseHeader();

@@ -1,36 +1,36 @@
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 public class RequestParser {
-    public int contentLength;
     private String header;
     private byte[] body;
-    private int part = 0;
+    public int contentLength;
+    private String boundary;
+    private String bodyHeader;
+    private HashMap<String, String> headerMap;
+
 
     public void interpretHeader(byte[] input) throws IOException {
         contentLength = -1;
         header = new String(input, StandardCharsets.UTF_8);
 
-        if (header.contains("\r\n\r\n")) {
-            contentLength = findContentLength(header);
-            if (header.contains("multipart/form-data")) {
-                String headers[] = header.split("------");
-                if (headers.length > 1) {
-                    if (headers[1].contains("\r\n\r\n")) {
-                        contentLength = calcBodySize(headers[1]);
-                    } else {
-                        contentLength = -1;
-                    }
-                } else {
-                    contentLength = -1;
+        if (header.endsWith("\r\n\r\n")) {
+            headerMap = new HashMap<String, String>();
+            for (String entity : header.split("\r\n")) {
+                if (entity.contains("HTTP/")) {
+                    headerMap.put("status", entity);
+                } else if(entity.contains(": ")){
+                    String[] parts = entity.split(": ");
+                    headerMap.put(parts[0], parts[1]);
                 }
-                System.out.println("header = " + header);
-                System.out.println("contentLength = " + contentLength);
-            } else {
-                findContentLength(header);
+
+                contentLength = findContentLength(headerMap);
                 if (contentLength == -1) {
                     contentLength = 0;
                 }
@@ -38,65 +38,65 @@ public class RequestParser {
         }
     }
 
-    private int calcBodySize(String header) {
-        String fileName = "";
-        String[] header2Parts = header.split("\r\n");
-        if (header2Parts.length > 2) {
-            String disposition = header2Parts[1];
-            String[] dispositions = disposition.split("; ");
-            fileName = dispositions[2].split("=")[1];
-            fileName.replaceAll("\"", "");
+    public void interpretBody(byte[] requestBody) throws IOException {
+        String boundary = setBoundary();
+        int boundaryByteLength = boundary.length();
+
+        int remainingBytes = contentLength;
+        ByteArrayInputStream input = new ByteArrayInputStream(requestBody);
+        BufferedInputStream buffed = new BufferedInputStream(input);
+        ByteArrayOutputStream outputHeader = new ByteArrayOutputStream();
+
+        bodyHeader = "";
+        while (!(bodyHeader.endsWith("\r\n\r\n"))) {
+            int b = buffed.read();
+            outputHeader.write(b);
+            remainingBytes--;
+            byte[] bodyHeadBytes = outputHeader.toByteArray();
+            bodyHeader = new String(bodyHeadBytes, StandardCharsets.UTF_8);
         }
-//        return contentLength - 172 - fileName.length();
-    return contentLength;
+
+        String[] bodyEntities = bodyHeader.split("\r\n");
+        for (String entity : bodyEntities) {
+            if (entity.contains(": ")) {
+                String[] parts = entity.split(": ");
+                headerMap.put(parts[0], parts[1]);
+            }
+        }
+
+        ByteArrayOutputStream outputBody = new ByteArrayOutputStream();
+        outputBody.write(buffed.readNBytes(remainingBytes - boundaryByteLength));
+
+        body = outputBody.toByteArray();
+        headerMap.put("bodySize", String.valueOf(body.length - "--\r\n\r\n".length()));
     }
 
-    private void resetAll () {
-            contentLength = -1;
-            header = null;
-            body = null;
-        }
-
-        public int findContentLength(String header) throws IOException {
-            String[] splitHeader = header.split("\r\n");
-            List<String> entityList = new ArrayList<>();
-
-            for (String line : header.split("\r\n")) {
-                if (!(line.isBlank() || line.length() < 3))
-                    entityList.add(line);
-            }
-
-            for (String entity : entityList) {
-                if (entity.contains("Content-Length")) {
-                    contentLength = Integer.parseInt(entity.split(" ")[1]);
-                }
-            }
-            return contentLength;
-        }
-
-        private void setContentLength(int contentLength){
-            this.contentLength = contentLength;
-        }
-
-        private void setBody ( byte[] request){
-            if (contentLength > 0) {
-                ByteBuffer buffer = ByteBuffer.wrap(request);
-                body = new byte[contentLength];
-                buffer.get(body, 0, contentLength);
-
-            }
-        }
-
-        public byte[] getBody () {
-            return body;
-        }
-
-        public String getHeader () {
-            return header;
-        }
-
-
-        public int getContentLength() {
-            return contentLength;
-        }
+    private String setBoundary() {
+        String line = headerMap.get("Content-Type");
+        boundary = line.split("boundary=")[1];
+        return "--" + boundary;
     }
+
+    public int findContentLength(HashMap<String, String> headerMap) throws IOException {
+        if (headerMap.containsKey("Content-Length")) {
+            contentLength = Integer.parseInt(headerMap.get("Content-Length"));
+        }
+        return contentLength;
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
+
+    public String getHeader() {
+        return header;
+    }
+
+    public int getContentLength() {
+        return contentLength;
+    }
+
+    public Map getHeaderMap() {
+        return headerMap;
+    }
+}

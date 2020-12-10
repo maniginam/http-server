@@ -16,7 +16,7 @@ public class HttpServer {
     private String responseHeader;
     private Map<String, String> contentTypes = new HashMap<String, String>();
     private int numberOfRequestParts;
-    private String requestHeader;
+    private Map<String, String> requestHeader;
     private byte[] requestBody;
     private int multiPartRequestCounter = 0;
     private RequestParser requestParser;
@@ -34,17 +34,22 @@ public class HttpServer {
         poster = new PostFormHandler();
     }
 
-    public void submitRequest(String requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
+    public void submitRequest(Map<String, String> requestHeader, byte[] requestBody) throws ExceptionInfo, IOException {
         this.requestHeader = requestHeader;
         this.requestBody = requestBody;
         responseHeader = null;
         responseBodyMessage = null;
         responseBodyBytes = null;
+        String method = "";
+        String target = "";
 
-        String method = requestHeader.split(" ")[0];
-        String target = requestHeader.split(" ")[1];
+        if(requestHeader.containsKey("status")) {
+            String status = requestHeader.get("status");
+            method = status.split(" ")[0];
+            target = status.split(" ")[1];
+        }
 
-        if (!requestHeader.contains("favicon")) {
+        if (!requestHeader.get("status").contains("favicon")) {
             if (method.contains("GET"))
                 respondToGET(requestHeader, target);
             else if (method.contains("POST")) {
@@ -53,7 +58,7 @@ public class HttpServer {
         }
     }
 
-    private void respondToPOST(String request, byte[] requestBody) throws IOException {
+    private void respondToPOST(Map<String, String> requestHeader, byte[] requestBody) throws IOException {
         if (requestBody != null) {
             if (poster.getFileName() != null) {
                 fileName = root + "/img/" + poster.getFileName();
@@ -63,20 +68,14 @@ public class HttpServer {
                 output.close();
             }
         }
-        poster.handle(request, requestBody);
+        poster.respond(requestHeader, requestBody);
         responseBodyMessage = poster.getResponseBody();
         fields = "";
         setResponseHeader(200, fields);
         setResponse();
-        System.out.println("responseBodyMessage = " + responseBodyMessage);
-//        } else {
-//            fields = "";
-//            setHeader(200, fields);
-//            setResponse();
-//        }
     }
 
-    private void respondToGET(String msg, String target) throws IOException, ExceptionInfo {
+    private void respondToGET(Map<String, String> requestHeader, String target) throws IOException, ExceptionInfo {
         if (target.matches("HTTP/1.1") || target.matches("/")) {
             getDefaultRoot();
         } else if (target.matches("/listing")) {
@@ -253,7 +252,7 @@ public class HttpServer {
         return numberOfRequestParts;
     }
 
-    public String getRequestHeader() {
+    public Map<String, String> getRequestHeader() {
         return requestHeader;
     }
 

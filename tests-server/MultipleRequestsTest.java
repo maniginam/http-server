@@ -74,21 +74,17 @@ public class MultipleRequestsTest {
         output1.write(request1.getBytes());
         buffedInput.read();
 
-        String requestHeader1 = host.getHandler().getRequestHeader();
         String header1Result = host.getHandler().getResponseHeader();
         String body1Result = host.getHandler().getResponseBodyMessage();
 
         output2.write(request2.getBytes());
         Thread.sleep(100);
 
-        String requestHeader2 = host.getHandler().getRequestHeader();
         String header2Result = host.getHandler().getResponseHeader();
         String body2Result = host.getHandler().getResponseBodyMessage();
 
-        assertEquals(request1, requestHeader1);
         assertTrue(header1Result.contains("HTTP/1.1 200 OK"));
         assertTrue(body1Result.contains("<li><a href=\"/forms.html\">forms.html</a></li>"));
-        assertEquals(request2, requestHeader2);
         assertTrue(header2Result.contains("HTTP/1.1 200 OK"));
         assertTrue(body2Result.contains("<h2>Ping</h2>"));
     }

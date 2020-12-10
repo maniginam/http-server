@@ -83,5 +83,4 @@ public class SocketHost {
     public Thread getConnectionThread() {
         return connectionThread;
     }
-
 }

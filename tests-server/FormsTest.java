@@ -4,6 +4,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -31,7 +33,10 @@ public class FormsTest {
 
     @Test
     public void formIsCalled() throws IOException, ExceptionInfo {
-        handler.handle("GET /forms.html HTTP/1.1", null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", "GET /forms.html HTTP/1.1");
+
+        handler.handle(header, null);
         String response = handler.getServer().getResponseBodyMessage();
 
         assertTrue(response.contains("<h2>Get Form</h2>"));
@@ -41,7 +46,10 @@ public class FormsTest {
 
     @Test
     public void oneFormEntry() throws IOException, ExceptionInfo {
-        handler.handle("GET /form?foo=1", null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", "GET /form?foo=1");
+
+        handler.handle(header, null);
 
         String body = handler.getServer().getResponseBodyMessage();
 
@@ -53,7 +61,10 @@ public class FormsTest {
     @Test
     public void twoFormEntries() throws IOException, ExceptionInfo {
         String request = "GET /form?foo=1&bar=2";
-        handler.handle(request, null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", request);
+
+        handler.handle(header, null);
 
         String body = handler.getServer().getResponseBodyMessage();
 
@@ -65,7 +76,9 @@ public class FormsTest {
     @Test
     public void twoFormEntriesWithLongInputs() throws IOException, ExceptionInfo {
         String request = "GET /form?foo=Rex&bar=Leo";
-        handler.handle(request, null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", request);
+        handler.handle(header, null);
 
         String body = handler.getServer().getResponseBodyMessage();
 
@@ -76,7 +89,11 @@ public class FormsTest {
 
     @Test
     public void postIsPresent() throws IOException, ExceptionInfo {
-        handler.handle("GET /forms.html HTTP/1.1", null);
+        String request = "GET /forms.html HTTP/1.1";
+        Map<String, String> header = new HashMap<>();
+        header.put("status", request);
+        handler.handle(header, null);
+
         String response = handler.getServer().getResponseBodyMessage();
 
         assertTrue(response.contains("<h2>Post Form</h2>"));
@@ -89,9 +106,7 @@ public class FormsTest {
     public void postImage() throws IOException, ExceptionInfo, InterruptedException {
         host.start();
         helper.connect();
-        OutputStream output1 = helper.getOutput();
-        OutputStream output2 = helper.getOutput();
-        OutputStream output3 = helper.getOutput();
+        OutputStream output = helper.getOutput();
         BufferedInputStream buffedInput = helper.getBuffedInput();
 
         File file = new File("/Users/maniginam/server-task/http-server/BruslyDog.jpeg");
@@ -100,57 +115,27 @@ public class FormsTest {
         ByteArrayOutputStream requestImage = new ByteArrayOutputStream();
         requestImage.write(image);
 
-        String requestHeader1 = "POST /form HTTP/1.1\n" +
-                "Host: localhost:1234\r\n" +
-                "Connection: keep-alive\r\n" +
-                "Content-Length: 93178\r\n" +
-                "Cache-Control: max-age=0\r\n" +
-                "Upgrade-Insecure-Requests: 1\r\n" +
-                "Origin: http://localhost:1234\r\n" +
-                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
-                "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36\r\n" +
-                "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9\r\n" +
-                "Sec-Fetch-Site: same-origin\\rn" +
-                "Sec-Fetch-Mode: navigate\r\n" +
-                "Sec-Fetch-User: ?1\r\n" +
-                "Sec-Fetch-Dest: document\r\n" +
-                "Referer: http://localhost:1234/forms.html\r\n" +
-                "Accept-Encoding: gzip, deflate, br\r\n" +
-                "Accept-Language: en-US,en;q=0.9\r\n\r\n";
-
-//
-//        "POST /form HTTP/1.1\r\n" +
-//                "Name: file\r\n" +
-//                "Content-Type: multipart/form-data; boundary=----Rex&Leo\r\n" +
-//                "Content: " + file + "\r\n" +
-//                "Content-Length: " + image.length + "\r\n" +
-//                "something blah\r\n";
-
-        String requestHeader2 = requestHeader1 + "------Rex&Leo\r\n" +
-                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\"\r\n" +
+        String boundary = "-----------Rex&LeoBoundary";
+        String part1Header = boundary + "\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"BruslyDog.jpeg\r\n" +
                 "Content-Type: image/jpeg\r\n\r\n";
 
-//        output1.write((requestHeader1 + "\r\n").getBytes());
-//        buffedInput.read();
-//
-//        output2.write((requestHeader2 + "\r\n").getBytes());
-//        Thread.sleep(100);
+        int contentLength = (part1Header + "--" + boundary).getBytes().length + image.length - 1;
 
-        output3.write(requestHeader2.getBytes());
-        output3.write(image);
-        output3.write("\r\n\r\n".getBytes());
+        String requestHeader1 = "POST /form HTTP/1.1\r\n" +
+                "Content-Length: " + contentLength + "\r\n" +
+                "Content-Type: multipart/form-data; boundary=----Rex&LeoBoundary\r\n\r\n";
+
+        output.write(requestHeader1.getBytes());
+        output.write(part1Header.getBytes());
+        output.write(image);
+        output.write((boundary + "----\r\n\r\n").getBytes());
         buffedInput.read();
         Thread.sleep(100);
 
-
-        String requestHeaderResult = host.getHandler().getRequestHeader();
-        byte[] requestBodyResult = host.getHandler().getRequestBody();
         String responseHeaderResult = host.getHandler().getResponseHeader();
         String responseBodyMessageResult = host.getHandler().getResponseBodyMessage();
         byte[] responseBodyResult = host.getHandler().getResponseBody();
-
-        assertArrayEquals(requestImage.toByteArray(), requestBodyResult);
-        assertTrue(requestHeaderResult.contains("Content-Type: image/jpeg"));
 
         assertTrue(responseHeaderResult.contains("HTTP/1.1 200 OK"));
         assertNull(responseBodyResult);
@@ -166,10 +151,14 @@ public class FormsTest {
     public void boxMapWDisposition() throws IOException, ExceptionInfo {
         PostFormHandler poster = new PostFormHandler();
         String request = "Rex\r\n" +
-                "Content-Disposition: form-data; name=\"file\"; filename=\"Leo.jpeg\"\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"Leo.jpeg\"" +
                 "Content-Type: image/jpeg";
+        Map<String, String> header = new HashMap<>();
+        header.put("status", "Rex");
+        header.put("Content-Disposition", "form-data; name=\"file\"; filename=\"Leo.jpeg\"");
+        header.put("Content-Type", "image/jpeg");
 
-        poster.handle(request, "Leo.jpeg".getBytes());
+        poster.respond(header, "Leo.jpeg".getBytes());
         String result = poster.getResponseBody();
 
         assertTrue(result.contains("<li>file name: Leo.jpeg</li>"));

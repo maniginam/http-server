@@ -1,7 +1,8 @@
 import java.io.IOException;
+import java.util.Map;
 
 public interface Handler {
-    byte[] handle(String header, byte[] body) throws ExceptionInfo, IOException;
+    byte[] handle(Map<String, String> header, byte[] body) throws ExceptionInfo, IOException;
 
     String getRoot();
 

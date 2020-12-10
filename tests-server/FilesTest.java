@@ -5,6 +5,8 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -23,7 +25,9 @@ public class FilesTest {
     @Test
     public void submitListing() throws IOException, ExceptionInfo {
         String get = "GET /listing HTTP/1.1";
-        handler.handle(get, null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", get);
+        handler.handle(header, null);
         String result = handler.getServer().getResponseBodyMessage();
 
         assertTrue(result.contains("<ul>"));
@@ -35,7 +39,10 @@ public class FilesTest {
     @Test
     public void submitListingImgs() throws IOException, ExceptionInfo {
         String get = "GET /listing/img HTTP/1.1";
-        handler.handle(get, null);
+        Map<String, String> header = new HashMap<>();
+        header.put("status", get);
+        handler.handle(header, null);
+
         String result = handler.getServer().getResponseBodyMessage();
 
         assertTrue(result.contains("<ul>"));
@@ -51,8 +58,10 @@ public class FilesTest {
         String msg = Files.readString(path, StandardCharsets.UTF_8);
         int contentLength = msg.length();
         String get = "GET /index.html HTTP/1.1";
+        Map<String, String> header = new HashMap<>();
+        header.put("status", get);
+        handler.handle(header, null);
 
-        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         String result = handler.getServer().getResponseBodyMessage();
 
@@ -70,8 +79,10 @@ public class FilesTest {
         String get = "GET /img/autobot.jpg HTTP/1.1\r\n\r\n";
         server.convertFiletoBytes(jpg);
         byte[] body = server.responseBodyBytes;
+        Map<String, String> header = new HashMap<>();
+        header.put("status", get);
+        handler.handle(header, null);
 
-        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getResponseBodyBytes();
 
@@ -88,9 +99,10 @@ public class FilesTest {
 
         server.convertFiletoBytes(png);
         byte[] body = server.responseBodyBytes;
+        Map<String, String> header = new HashMap<>();
+        header.put("status", get);
+        handler.handle(header, null);
 
-
-        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getResponseBodyBytes();
 
@@ -107,9 +119,10 @@ public class FilesTest {
 
         server.convertFiletoBytes(pdf);
         byte[] body = server.responseBodyBytes;
+        Map<String, String> header = new HashMap<>();
+        header.put("status", get);
+        handler.handle(header, null);
 
-
-        handler.handle(get, null);
         String fields = handler.getServer().getFields();
         byte[] bodyResult = handler.getServer().getResponseBodyBytes();
 

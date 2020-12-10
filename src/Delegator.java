@@ -1,11 +1,13 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.Map;
 
 public class Delegator implements Runnable {
     private final SocketHost host;
     private final Socket socket;
     private Thread thread;
     private final OutputStream output;
+    private RequestParser parser;
 
     public Delegator(SocketHost host, Socket socket) throws IOException {
         this.host = host;
@@ -15,61 +17,74 @@ public class Delegator implements Runnable {
 
     @Override
     public void run() {
-        String header = "";
-        byte[] body;
         byte[] response;
         ByteArrayOutputStream outputHeader;
-        ByteArrayOutputStream outputHeader2;
-        ByteArrayOutputStream outputBody;
 
         try {
             InputStream input = socket.getInputStream();
             BufferedInputStream buffedInput = new BufferedInputStream(input);
 
             while (host.isRunning() && socket.isConnected()) {
-                int bodySize = -1;
-                body = null;
-                if (input.available() > 0) {
+                if (buffedInput.available() > 0) {
+                    parser = new RequestParser();
                     outputHeader = new ByteArrayOutputStream();
-                    while (bodySize == -1) {
-                        int b = buffedInput.read();
-                        outputHeader.write(b);
-                        host.getHandler().handleHeader(outputHeader.toByteArray());
-                        header = host.getHandler().getRequestHeader();
-                        bodySize = host.getHandler().getBodySize();
-                        if (bodySize > 0) {
-                            outputBody = new ByteArrayOutputStream();
-                            outputBody.write(buffedInput.readNBytes(bodySize));
-                            body = outputBody.toByteArray();
-                        } else { body = null; }
-                }
+                    int contentLength = extractContentLength(outputHeader, buffedInput);
+                    if (contentLength > 0) {
+                        extractBody(buffedInput, contentLength);
+                    }
+                    response = respond();
 
-                try {
-                    response = host.getHandler().handle(header, body);
-                } catch (ExceptionInfo e) {
-                    response = e.getMessage().getBytes();
-                }
+                    if (response != null) {
+                        send(response);
+                        output.flush();
+                    }
 
-                if (response != null) {
-                    send(response);
-                    output.flush();
+                } else {
+                    Thread.sleep(1);
                 }
-
-            } else{
-                Thread.sleep(1);
             }
+        } catch (IOException |
+                InterruptedException e) {
+            e.printStackTrace();
         }
-    } catch(IOException |
-    InterruptedException e)
-
-    {
-        e.printStackTrace();
-    }
         host.getDelegators().
 
-    remove(this);
+                remove(this);
 
-}
+    }
+
+    private byte[] respond() throws IOException {
+        byte[] response;
+        try {
+            Map<String, String> header = parser.getHeaderMap();
+            byte[] body = parser.getBody();
+            response = host.getHandler().handle(header, body);
+        } catch (ExceptionInfo e) {
+            response = e.getMessage().getBytes();
+        }
+        return response;
+    }
+
+    private void extractBody(BufferedInputStream buffedInput, int contentLength) throws IOException {
+        ByteArrayOutputStream outputBody;
+        byte[] body;
+        outputBody = new ByteArrayOutputStream();
+        outputBody.write(buffedInput.readNBytes(contentLength));
+        body = outputBody.toByteArray();
+        parser.interpretBody(body);
+        outputBody.flush();
+    }
+
+    private int extractContentLength(ByteArrayOutputStream outputHeader, BufferedInputStream buffedInput) throws IOException {
+        int contentLength = -1;
+        while (contentLength == -1) {
+            int b = buffedInput.read();
+            outputHeader.write(b);
+            parser.interpretHeader(outputHeader.toByteArray());
+            contentLength = parser.getContentLength();
+        }
+        return contentLength;
+    }
 
     public void start() throws IOException {
         thread = new Thread(this);
